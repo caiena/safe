@@ -1,4 +1,4 @@
-module Gush
+module SAFE
   class Graph
     attr_reader :workflow, :filename, :path, :start, :end_node
 

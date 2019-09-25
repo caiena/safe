@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Gush::Graph do
+describe SAFE::Graph do
 
   describe "#create" do
 

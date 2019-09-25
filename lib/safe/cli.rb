@@ -3,22 +3,22 @@ require 'colorize'
 require 'thor'
 require 'launchy'
 
-module Gush
+module SAFE
   class CLI < Thor
-    class_option :gushfile, desc: "configuration file to use", aliases: "-f"
+    class_option :safefile, desc: "configuration file to use", aliases: "-f"
     class_option :redis, desc: "Redis URL to use", aliases: "-r"
     class_option :namespace, desc: "namespace to run jobs in", aliases: "-n"
 
     def initialize(*)
       super
-      Gush.configure do |config|
-        config.gushfile    = options.fetch("gushfile",    config.gushfile)
+      SAFE.configure do |config|
+        config.safefile    = options.fetch("safefile",    config.safefile)
         config.concurrency = options.fetch("concurrency", config.concurrency)
         config.redis_url   = options.fetch("redis",       config.redis_url)
         config.namespace   = options.fetch("namespace",   config.namespace)
         config.ttl         = options.fetch("ttl",         config.ttl)
       end
-      load_gushfile
+      load_safefile
     end
 
     desc "create [WorkflowClass]", "Registers new workflow"
@@ -112,13 +112,13 @@ module Gush
       puts overview(workflow).jobs_list(jobs)
     end
 
-    def gushfile
-      Gush.configuration.gushfile
+    def safefile
+      SAFE.configuration.safefile
     end
 
-    def load_gushfile
-      file = client.configuration.gushfile
-      if !gushfile.exist?
+    def load_safefile
+      file = client.configuration.safefile
+      if !safefile.exist?
         raise Thor::Error, "#{file} not found, please add it to your project".colorize(:red)
       end
 

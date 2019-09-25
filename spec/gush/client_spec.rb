@@ -1,8 +1,8 @@
 require 'spec_helper'
 
-describe Gush::Client do
+describe SAFE::Client do
   let(:client) do
-    Gush::Client.new(Gush::Configuration.new(gushfile: GUSHFILE, redis_url: REDIS_URL))
+    SAFE::Client.new(SAFE::Configuration.new(safefile: SAFEFILE, redis_url: REDIS_URL))
   end
 
   describe "#find_workflow" do
@@ -10,7 +10,7 @@ describe Gush::Client do
       it "returns raises WorkflowNotFound" do
         expect {
           client.find_workflow('nope')
-        }.to raise_error(Gush::WorkflowNotFound)
+        }.to raise_error(SAFE::WorkflowNotFound)
       end
     end
 
@@ -77,20 +77,20 @@ describe Gush::Client do
       expect(client).to receive(:persist_job).exactly(3).times.with(workflow.id, job)
       expect(workflow).to receive(:mark_as_persisted)
       client.persist_workflow(workflow)
-      expect(redis.keys("gush.workflows.abcd").length).to eq(1)
+      expect(redis.keys("safe.workflows.abcd").length).to eq(1)
     end
   end
 
   describe "#destroy_workflow" do
     it "removes all Redis keys related to the workflow" do
       workflow = TestWorkflow.create
-      expect(redis.keys("gush.workflows.#{workflow.id}").length).to eq(1)
-      expect(redis.keys("gush.jobs.#{workflow.id}.*").length).to eq(5)
+      expect(redis.keys("safe.workflows.#{workflow.id}").length).to eq(1)
+      expect(redis.keys("safe.jobs.#{workflow.id}.*").length).to eq(5)
 
       client.destroy_workflow(workflow)
 
-      expect(redis.keys("gush.workflows.#{workflow.id}").length).to eq(0)
-      expect(redis.keys("gush.jobs.#{workflow.id}.*").length).to eq(0)
+      expect(redis.keys("safe.workflows.#{workflow.id}").length).to eq(0)
+      expect(redis.keys("safe.jobs.#{workflow.id}.*").length).to eq(0)
     end
   end
 
@@ -110,7 +110,7 @@ describe Gush::Client do
       job = BobJob.new(name: 'bob')
 
       client.persist_job('deadbeef', job)
-      expect(redis.keys("gush.jobs.deadbeef.*").length).to eq(1)
+      expect(redis.keys("safe.jobs.deadbeef.*").length).to eq(1)
     end
   end
 
@@ -126,9 +126,9 @@ describe Gush::Client do
     workflow = TestWorkflow.create
 
     # malform the data
-    hash = Gush::JSON.decode(redis.get("gush.workflows.#{workflow.id}"), symbolize_keys: true)
+    hash = SAFE::JSON.decode(redis.get("safe.workflows.#{workflow.id}"), symbolize_keys: true)
     hash.delete(:stopped)
-    redis.set("gush.workflows.#{workflow.id}", Gush::JSON.encode(hash))
+    redis.set("safe.workflows.#{workflow.id}", SAFE::JSON.encode(hash))
 
     expect {
       workflow = client.find_workflow(workflow.id)

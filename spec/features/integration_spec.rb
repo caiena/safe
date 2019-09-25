@@ -20,7 +20,7 @@ describe "Workflows" do
       FAIL_THEN_SUCCEED_SPY = double()
       allow(FAIL_THEN_SUCCEED_SPY).to receive(:foo).and_return('failure', 'success')
 
-      class FailsThenSucceeds < Gush::Job
+      class FailsThenSucceeds < SAFE::Job
         def perform
           if FAIL_THEN_SUCCEED_SPY.foo == 'failure'
             raise NameError
@@ -28,7 +28,7 @@ describe "Workflows" do
         end
       end
 
-      class SecondChanceWorkflow < Gush::Workflow
+      class SecondChanceWorkflow < SAFE::Workflow
         def configure
           run Prepare
           run FailsThenSucceeds, after: Prepare
@@ -39,21 +39,21 @@ describe "Workflows" do
       flow = SecondChanceWorkflow.create
       flow.start!
 
-      expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(['Prepare']))
+      expect(SAFE::Worker).to have_jobs(flow.id, jobs_with_id(['Prepare']))
       perform_one
 
-      expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(['FailsThenSucceeds']))
+      expect(SAFE::Worker).to have_jobs(flow.id, jobs_with_id(['FailsThenSucceeds']))
       expect do
         perform_one
       end.to raise_error(NameError)
 
       expect(flow.reload).to be_failed
-      expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(['FailsThenSucceeds']))
+      expect(SAFE::Worker).to have_jobs(flow.id, jobs_with_id(['FailsThenSucceeds']))
 
       # Retry the same job again, but this time succeeds
       perform_one
 
-      expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(['NormalizeJob']))
+      expect(SAFE::Worker).to have_jobs(flow.id, jobs_with_id(['NormalizeJob']))
       perform_one
 
       flow = flow.reload
@@ -66,19 +66,19 @@ describe "Workflows" do
     flow = TestWorkflow.create
     flow.start!
 
-    expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(['Prepare']))
+    expect(SAFE::Worker).to have_jobs(flow.id, jobs_with_id(['Prepare']))
 
     perform_one
-    expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(["FetchFirstJob", "FetchSecondJob"]))
+    expect(SAFE::Worker).to have_jobs(flow.id, jobs_with_id(["FetchFirstJob", "FetchSecondJob"]))
 
     perform_one
-    expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(["FetchSecondJob", "PersistFirstJob"]))
+    expect(SAFE::Worker).to have_jobs(flow.id, jobs_with_id(["FetchSecondJob", "PersistFirstJob"]))
 
     perform_one
-    expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(["PersistFirstJob"]))
+    expect(SAFE::Worker).to have_jobs(flow.id, jobs_with_id(["PersistFirstJob"]))
 
     perform_one
-    expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(["NormalizeJob"]))
+    expect(SAFE::Worker).to have_jobs(flow.id, jobs_with_id(["NormalizeJob"]))
 
     perform_one
 
@@ -86,26 +86,26 @@ describe "Workflows" do
   end
 
   it "passes payloads down the workflow" do
-    class UpcaseJob < Gush::Job
+    class UpcaseJob < SAFE::Job
       def perform
         output params[:input].upcase
       end
     end
 
-    class PrefixJob < Gush::Job
+    class PrefixJob < SAFE::Job
       def perform
         output params[:prefix].capitalize
       end
     end
 
-    class PrependJob < Gush::Job
+    class PrependJob < SAFE::Job
       def perform
         string = "#{payloads.find { |j| j[:class] == 'PrefixJob'}[:output]}: #{payloads.find { |j| j[:class] == 'UpcaseJob'}[:output]}"
         output string
       end
     end
 
-    class PayloadWorkflow < Gush::Workflow
+    class PayloadWorkflow < SAFE::Workflow
       def configure
         run UpcaseJob, params: {input: "some text"}
         run PrefixJob, params: {prefix: "a prefix"}
@@ -127,19 +127,19 @@ describe "Workflows" do
   end
 
   it "passes payloads from workflow that runs multiple same class jobs with nameized payloads" do
-    class RepetitiveJob < Gush::Job
+    class RepetitiveJob < SAFE::Job
       def perform
         output params[:input]
       end
     end
 
-    class SummaryJob < Gush::Job
+    class SummaryJob < SAFE::Job
       def perform
         output payloads.map { |payload| payload[:output] }
       end
     end
 
-    class PayloadWorkflow < Gush::Workflow
+    class PayloadWorkflow < SAFE::Workflow
       def configure
         jobs = []
         jobs << run(RepetitiveJob, params: {input: 'first'})
@@ -173,13 +173,13 @@ describe "Workflows" do
     # One time when persisting, second time when reloading in the spec
     expect(INTERNAL_CONFIGURE_SPY).to receive(:some_method).exactly(2).times
 
-    class SimpleJob < Gush::Job
+    class SimpleJob < SAFE::Job
       def perform
         INTERNAL_SPY.some_method
       end
     end
 
-    class GiganticWorkflow < Gush::Workflow
+    class GiganticWorkflow < SAFE::Workflow
       def configure
         INTERNAL_CONFIGURE_SPY.some_method
 
@@ -208,23 +208,23 @@ describe "Workflows" do
     NO_DUPS_INTERNAL_SPY = double('spy')
     expect(NO_DUPS_INTERNAL_SPY).to receive(:some_method).exactly(1).times
 
-    class FirstAncestor < Gush::Job
+    class FirstAncestor < SAFE::Job
       def perform
       end
     end
 
-    class SecondAncestor < Gush::Job
+    class SecondAncestor < SAFE::Job
       def perform
       end
     end
 
-    class FinalJob < Gush::Job
+    class FinalJob < SAFE::Job
       def perform
         NO_DUPS_INTERNAL_SPY.some_method
       end
     end
 
-    class NoDuplicatesWorkflow < Gush::Workflow
+    class NoDuplicatesWorkflow < SAFE::Workflow
       def configure
         run FirstAncestor
         run SecondAncestor

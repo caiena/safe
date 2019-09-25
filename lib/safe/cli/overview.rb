@@ -1,4 +1,4 @@
-module Gush
+module SAFE
   class CLI
     class Overview
       attr_reader :workflow

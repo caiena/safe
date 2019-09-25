@@ -1,10 +1,10 @@
 require 'connection_pool'
 
-module Gush
+module SAFE
   class Client
     attr_reader :configuration
 
-    def initialize(config = Gush.configuration)
+    def initialize(config = SAFE.configuration)
       @configuration = config
     end
 
@@ -48,7 +48,7 @@ module Gush
       loop do
         job_id = SecureRandom.uuid
         available = connection_pool.with do |redis|
-          !redis.hexists("gush.jobs.#{workflow_id}.#{job_klass}", job_id)
+          !redis.hexists("safe.jobs.#{workflow_id}.#{job_klass}", job_id)
         end
 
         break if available
@@ -62,7 +62,7 @@ module Gush
       loop do
         id = SecureRandom.uuid
         available = connection_pool.with do |redis|
-          !redis.exists("gush.workflow.#{id}")
+          !redis.exists("safe.workflow.#{id}")
         end
 
         break if available
@@ -73,8 +73,8 @@ module Gush
 
     def all_workflows
       connection_pool.with do |redis|
-        redis.scan_each(match: "gush.workflows.*").map do |key|
-          id = key.sub("gush.workflows.", "")
+        redis.scan_each(match: "safe.workflows.*").map do |key|
+          id = key.sub("safe.workflows.", "")
           find_workflow(id)
         end
       end
@@ -82,14 +82,14 @@ module Gush
 
     def find_workflow(id)
       connection_pool.with do |redis|
-        data = redis.get("gush.workflows.#{id}")
+        data = redis.get("safe.workflows.#{id}")
 
         unless data.nil?
-          hash = Gush::JSON.decode(data, symbolize_keys: true)
-          keys = redis.scan_each(match: "gush.jobs.#{id}.*")
+          hash = SAFE::JSON.decode(data, symbolize_keys: true)
+          keys = redis.scan_each(match: "safe.jobs.#{id}.*")
 
           nodes = keys.each_with_object([]) do |key, array|
-            array.concat redis.hvals(key).map { |json| Gush::JSON.decode(json, symbolize_keys: true) }
+            array.concat redis.hvals(key).map { |json| SAFE::JSON.decode(json, symbolize_keys: true) }
           end
 
           workflow_from_hash(hash, nodes)
@@ -101,7 +101,7 @@ module Gush
 
     def persist_workflow(workflow)
       connection_pool.with do |redis|
-        redis.set("gush.workflows.#{workflow.id}", workflow.to_json)
+        redis.set("safe.workflows.#{workflow.id}", workflow.to_json)
       end
 
       workflow.jobs.each {|job| persist_job(workflow.id, job) }
@@ -112,7 +112,7 @@ module Gush
 
     def persist_job(workflow_id, job)
       connection_pool.with do |redis|
-        redis.hset("gush.jobs.#{workflow_id}.#{job.klass}", job.id, job.to_json)
+        redis.hset("safe.jobs.#{workflow_id}.#{job.klass}", job.id, job.to_json)
       end
     end
 
@@ -127,27 +127,27 @@ module Gush
 
       return nil if data.nil?
 
-      data = Gush::JSON.decode(data, symbolize_keys: true)
-      Gush::Job.from_hash(data)
+      data = SAFE::JSON.decode(data, symbolize_keys: true)
+      SAFE::Job.from_hash(data)
     end
 
     def destroy_workflow(workflow)
       connection_pool.with do |redis|
-        redis.del("gush.workflows.#{workflow.id}")
+        redis.del("safe.workflows.#{workflow.id}")
       end
       workflow.jobs.each {|job| destroy_job(workflow.id, job) }
     end
 
     def destroy_job(workflow_id, job)
       connection_pool.with do |redis|
-        redis.del("gush.jobs.#{workflow_id}.#{job.klass}")
+        redis.del("safe.jobs.#{workflow_id}.#{job.klass}")
       end
     end
 
     def expire_workflow(workflow, ttl=nil)
       ttl = ttl || configuration.ttl
       connection_pool.with do |redis|
-        redis.expire("gush.workflows.#{workflow.id}", ttl)
+        redis.expire("safe.workflows.#{workflow.id}", ttl)
       end
       workflow.jobs.each {|job| expire_job(workflow.id, job, ttl) }
     end
@@ -155,7 +155,7 @@ module Gush
     def expire_job(workflow_id, job, ttl=nil)
       ttl = ttl || configuration.ttl
       connection_pool.with do |redis|
-        redis.expire("gush.jobs.#{workflow_id}.#{job.name}", ttl)
+        redis.expire("safe.jobs.#{workflow_id}.#{job.name}", ttl)
       end
     end
 
@@ -164,7 +164,7 @@ module Gush
       persist_job(workflow_id, job)
       queue = job.queue || configuration.namespace
 
-      Gush::Worker.set(queue: queue).perform_later(*[workflow_id, job.name])
+      SAFE::Worker.set(queue: queue).perform_later(*[workflow_id, job.name])
     end
 
     private
@@ -173,13 +173,13 @@ module Gush
       job_klass, job_id = job_name.split('|')
 
       connection_pool.with do |redis|
-        redis.hget("gush.jobs.#{workflow_id}.#{job_klass}", job_id)
+        redis.hget("safe.jobs.#{workflow_id}.#{job_klass}", job_id)
       end
     end
 
     def find_job_by_klass(workflow_id, job_name)
       new_cursor, result = connection_pool.with do |redis|
-        redis.hscan("gush.jobs.#{workflow_id}.#{job_name}", 0, count: 1)
+        redis.hscan("safe.jobs.#{workflow_id}.#{job_name}", 0, count: 1)
       end
 
       return nil if result.empty?
@@ -196,7 +196,7 @@ module Gush
       flow.id = hash[:id]
 
       flow.jobs = nodes.map do |node|
-        Gush::Job.from_hash(node)
+        SAFE::Job.from_hash(node)
       end
 
       flow

@@ -7,20 +7,20 @@ require "redis"
 require "securerandom"
 require "multi_json"
 
-require "gush/json"
-require "gush/cli"
-require "gush/cli/overview"
-require "gush/graph"
-require "gush/client"
-require "gush/configuration"
-require "gush/errors"
-require "gush/job"
-require "gush/worker"
-require "gush/workflow"
+require "safe/json"
+require "safe/cli"
+require "safe/cli/overview"
+require "safe/graph"
+require "safe/client"
+require "safe/configuration"
+require "safe/errors"
+require "safe/job"
+require "safe/worker"
+require "safe/workflow"
 
-module Gush
-  def self.gushfile
-    configuration.gushfile
+module SAFE
+  def self.safefile
+    configuration.safefile
   end
 
   def self.root

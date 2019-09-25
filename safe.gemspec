@@ -3,17 +3,17 @@ lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |spec|
-  spec.name          = "gush"
+  spec.name          = "safe"
   spec.version       = "2.0.1"
-  spec.authors       = ["Piotrek Okoński"]
-  spec.email         = ["piotrek@okonski.org"]
-  spec.summary       = "Fast and distributed workflow runner based on ActiveJob and Redis"
-  spec.description   = "Gush is a parallel workflow runner using Redis as storage and ActiveJob for executing jobs."
-  spec.homepage      = "https://github.com/chaps-io/gush"
+  spec.authors       = ["Denis Tierno"]
+  spec.email         = ["denis.tierno@caiena.net"]
+  spec.summary       = "Monitored and organized job execution based on Gush"
+  spec.description   = "Monitored and organized job execution based on Gush"
+  spec.homepage      = ""
   spec.license       = "MIT"
 
   spec.files         = `git ls-files -z`.split("\x0")
-  spec.executables   = "gush"
+  spec.executables   = "safe"
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
@@ -28,7 +28,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "colorize", "~> 0.7"
   spec.add_dependency "thor", "~> 0.19"
   spec.add_dependency "launchy", "~> 2.4"
-  spec.add_development_dependency "bundler", "~> 1.5"
+  spec.add_development_dependency "bundler"
   spec.add_development_dependency "rake", "~> 10.4"
   spec.add_development_dependency "rspec", '~> 3.0'
   spec.add_development_dependency "pry", '~> 0.10'

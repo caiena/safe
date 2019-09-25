@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Gush::Job do
+describe SAFE::Job do
 
   describe "#output" do
     it "saves output to output_payload" do
@@ -73,7 +73,7 @@ describe Gush::Job do
         job = described_class.new(workflow_id: 123, id: "702bced5-bb72-4bba-8f6f-15a3afa358bd", finished_at: 123, enqueued_at: 120)
         expected = {
           id: '702bced5-bb72-4bba-8f6f-15a3afa358bd',
-          klass: "Gush::Job",
+          klass: "SAFE::Job",
           incoming: [],
           outgoing: [],
           failed_at: nil,
@@ -94,7 +94,7 @@ describe Gush::Job do
     it "properly restores state of the job from hash" do
       job = described_class.from_hash(
         {
-          klass: 'Gush::Job',
+          klass: 'SAFE::Job',
           id: '702bced5-bb72-4bba-8f6f-15a3afa358bd',
           incoming: ['a', 'b'],
           outgoing: ['c'],
@@ -106,9 +106,9 @@ describe Gush::Job do
       )
 
       expect(job.id).to eq('702bced5-bb72-4bba-8f6f-15a3afa358bd')
-      expect(job.name).to eq('Gush::Job|702bced5-bb72-4bba-8f6f-15a3afa358bd')
-      expect(job.class).to eq(Gush::Job)
-      expect(job.klass).to eq("Gush::Job")
+      expect(job.name).to eq('SAFE::Job|702bced5-bb72-4bba-8f6f-15a3afa358bd')
+      expect(job.class).to eq(SAFE::Job)
+      expect(job.klass).to eq("SAFE::Job")
       expect(job.finished?).to eq(true)
       expect(job.failed?).to eq(true)
       expect(job.enqueued?).to eq(true)

@@ -1,7 +1,7 @@
 require 'active_job'
 require 'redis-mutex'
 
-module Gush
+module SAFE
   class Worker < ::ActiveJob::Base
     def perform(workflow_id, job_id)
       setup_job(workflow_id, job_id)
@@ -27,7 +27,7 @@ module Gush
     attr_reader :client, :workflow_id, :job
 
     def client
-      @client ||= Gush::Client.new(Gush.configuration)
+      @client ||= SAFE::Client.new(SAFE.configuration)
     end
 
     def setup_job(workflow_id, job_id)
@@ -67,7 +67,7 @@ module Gush
 
     def enqueue_outgoing_jobs
       job.outgoing.each do |job_name|
-        RedisMutex.with_lock("gush_enqueue_outgoing_jobs_#{workflow_id}-#{job_name}", sleep: 0.3, block: 2) do
+        RedisMutex.with_lock("safe_enqueue_outgoing_jobs_#{workflow_id}-#{job_name}", sleep: 0.3, block: 2) do
           out = client.find_job(workflow_id, job_name)
 
           if out.ready_to_start?

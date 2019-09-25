@@ -1,4 +1,4 @@
-require 'gush'
+require 'safe'
 require 'fakeredis'
 require 'json'
 require 'pry'
@@ -6,17 +6,17 @@ require 'pry'
 ActiveJob::Base.queue_adapter = :test
 ActiveJob::Base.logger = nil
 
-class Prepare < Gush::Job; end
-class FetchFirstJob < Gush::Job; end
-class FetchSecondJob < Gush::Job; end
-class PersistFirstJob < Gush::Job; end
-class PersistSecondJob < Gush::Job; end
-class NormalizeJob < Gush::Job; end
-class BobJob < Gush::Job; end
+class Prepare < SAFE::Job; end
+class FetchFirstJob < SAFE::Job; end
+class FetchSecondJob < SAFE::Job; end
+class PersistFirstJob < SAFE::Job; end
+class PersistSecondJob < SAFE::Job; end
+class NormalizeJob < SAFE::Job; end
+class BobJob < SAFE::Job; end
 
-GUSHFILE = Pathname.new(__FILE__).parent.join("Gushfile")
+SAFEFILE = Pathname.new(__FILE__).parent.join("Safefile")
 
-class TestWorkflow < Gush::Workflow
+class TestWorkflow < SAFE::Workflow
   def configure
     run Prepare
 
@@ -29,7 +29,7 @@ class TestWorkflow < Gush::Workflow
   end
 end
 
-class ParameterTestWorkflow < Gush::Workflow
+class ParameterTestWorkflow < SAFE::Workflow
   def configure(param)
     run Prepare if param
   end
@@ -42,7 +42,7 @@ end
 
 REDIS_URL = "redis://localhost:6379/12"
 
-module GushHelpers
+module SAFEHelpers
   def redis
     @redis ||= Redis.new(url: REDIS_URL)
   end
@@ -50,7 +50,7 @@ module GushHelpers
   def perform_one
     job = ActiveJob::Base.queue_adapter.enqueued_jobs.first
     if job
-      Gush::Worker.new.perform(*job[:args])
+      SAFE::Worker.new.perform(*job[:args])
       ActiveJob::Base.queue_adapter.performed_jobs << job
       ActiveJob::Base.queue_adapter.enqueued_jobs.shift
     end
@@ -80,7 +80,7 @@ end
 
 RSpec.configure do |config|
   config.include ActiveJob::TestHelper
-  config.include GushHelpers
+  config.include SAFEHelpers
 
   config.mock_with :rspec do |mocks|
     mocks.verify_partial_doubles = true
@@ -90,9 +90,9 @@ RSpec.configure do |config|
     clear_enqueued_jobs
     clear_performed_jobs
 
-    Gush.configure do |config|
+    SAFE.configure do |config|
       config.redis_url = REDIS_URL
-      config.gushfile = GUSHFILE
+      config.safefile = SAFEFILE
     end
   end
 

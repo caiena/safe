@@ -1,23 +1,23 @@
 require 'spec_helper'
 
-describe Gush::Worker do
+describe SAFE::Worker do
   subject { described_class.new }
 
   let!(:workflow)   { TestWorkflow.create }
   let!(:job)        { client.find_job(workflow.id, "Prepare")  }
-  let(:config)      { Gush.configuration.to_json  }
-  let!(:client)     { Gush::Client.new }
+  let(:config)      { SAFE.configuration.to_json  }
+  let!(:client)     { SAFE::Client.new }
 
   describe "#perform" do
     context "when job fails" do
       it "should mark it as failed" do
-        class FailingJob < Gush::Job
+        class FailingJob < SAFE::Job
           def perform
             invalid.code_to_raise.error
           end
         end
 
-        class FailingWorkflow < Gush::Workflow
+        class FailingWorkflow < SAFE::Workflow
           def configure
             run FailingJob
           end
@@ -43,13 +43,13 @@ describe Gush::Worker do
       SPY = double()
       expect(SPY).to receive(:some_method)
 
-      class OkayJob < Gush::Job
+      class OkayJob < SAFE::Job
         def perform
           SPY.some_method
         end
       end
 
-      class OkayWorkflow < Gush::Workflow
+      class OkayWorkflow < SAFE::Workflow
         def configure
           run OkayJob
         end
