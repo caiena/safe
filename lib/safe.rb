@@ -35,3 +35,9 @@ module SAFE
     yield configuration
   end
 end
+
+if defined?(::Rails) && defined?(::Rails.application)
+  require "safe/rails/engine"
+else
+  ::Kernel.warn("Rails not loaded")
+end

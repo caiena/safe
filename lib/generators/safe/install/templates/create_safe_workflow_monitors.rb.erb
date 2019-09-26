@@ -1,0 +1,14 @@
+class CreateSafeWorkflowMonitors < ActiveRecord::Migration<%= migration_version %>
+
+  create_table :safe_workflow_monitors do |t|
+    t.string   :workflow,    null: false
+    t.string   :workflow_id, null: false
+    t.bigint   :monitorable_type
+    t.string   :monitorable_id
+    t.datetime :updated_at
+    t.datetime :created_at
+  end
+
+  add_index :safe_workflow_monitors, [:monitorable_type, :monitorable_id], name: 'index_safe_monit_on_monitorable'
+
+end

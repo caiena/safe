@@ -1,0 +1,14 @@
+class CreateSafeJobMonitors < ActiveRecord::Migration<%= migration_version %>
+
+  create_table :safe_job_monitors do |t|
+    t.bigint   :workflow_monitor_id, foreign_key: true, null: false, index: true
+    t.string   :job,       null: false
+    t.string   :job_id,    null: false
+    t.integer  :total,     null: false, default: 0
+    t.integer  :successes, null: false, default: 0
+    t.integer  :failures,  null: false, default: 0
+    t.datetime :updated_at
+    t.datetime :created_at
+  end
+
+end
