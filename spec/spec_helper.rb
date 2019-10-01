@@ -2,6 +2,14 @@ require 'safe'
 require 'fakeredis'
 require 'json'
 require 'pry'
+require 'pry-byebug'
+require 'bundler'
+
+Bundler.require :default, :development, :test
+
+Combustion.initialize! :active_record do
+  config.active_record.sqlite3.represent_boolean_as_integer = true
+end
 
 ActiveJob::Base.queue_adapter = :test
 ActiveJob::Base.logger = nil
@@ -13,6 +21,8 @@ class PersistFirstJob < SAFE::Job; end
 class PersistSecondJob < SAFE::Job; end
 class NormalizeJob < SAFE::Job; end
 class BobJob < SAFE::Job; end
+
+class MonitorableMock < ActiveRecord::Base; end
 
 SAFEFILE = Pathname.new(__FILE__).parent.join("Safefile")
 

@@ -18,6 +18,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency "activejob", ">= 4.2.7", "< 6.0"
+  spec.add_dependency "activerecord", ">= 4.2.7", "< 6.0"
   spec.add_dependency "connection_pool", "~> 2.2.1"
   spec.add_dependency "multi_json", "~> 1.11"
   spec.add_dependency "redis", ">= 3.2", "< 5"
@@ -31,6 +32,10 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "bundler"
   spec.add_development_dependency "rake", "~> 10.4"
   spec.add_development_dependency "rspec", '~> 3.0'
+  spec.add_development_dependency "sqlite3"
+  spec.add_development_dependency "guard-rspec"
+  spec.add_development_dependency "pry-byebug"
+  spec.add_development_dependency 'combustion', '~> 1.1'
   spec.add_development_dependency "pry", '~> 0.10'
   spec.add_development_dependency 'fakeredis', '~> 0.5'
 end

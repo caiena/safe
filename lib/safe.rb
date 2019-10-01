@@ -1,4 +1,5 @@
 require "bundler/setup"
+require "active_record"
 
 require "graphviz"
 require "hiredis"
@@ -17,6 +18,11 @@ require "safe/errors"
 require "safe/job"
 require "safe/worker"
 require "safe/workflow"
+
+require "safe/rails/models/safe/model"
+require "safe/rails/models/safe/workflow_monitor"
+require "safe/rails/models/safe/job_monitor"
+require "safe/rails/models/safe/error_occurrence"
 
 module SAFE
   def self.safefile
