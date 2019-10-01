@@ -3,6 +3,22 @@ require 'spec_helper'
 module SAFE
   RSpec.describe JobMonitor do
 
+    let(:workflow_monitor) do
+      WorkflowMonitor.create(
+        workflow:    'WorkflowClass',
+        workflow_id: '2346-5433',
+        monitorable: MonitorableMock.create!
+      )
+    end
+
+    let(:job_monitor) do
+      described_class.new(
+        workflow_monitor: workflow_monitor,
+        job: 'SomeJob',
+        job_id: '3433-4535'
+      )
+    end
+
     describe 'associations' do
       it 'belongs_to workflow_monitor' do
         association = described_class.reflect_on_association(:workflow_monitor)
@@ -16,22 +32,6 @@ module SAFE
     end
 
     describe 'validations' do
-      let(:workflow_monitor) do
-        WorkflowMonitor.create(
-          workflow:    'WorkflowClass',
-          workflow_id: '2346-5433',
-          monitorable: MonitorableMock.create!
-        )
-      end
-
-      let(:job_monitor) do
-        described_class.new(
-          workflow_monitor: workflow_monitor,
-          job: 'SomeJob',
-          job_id: '3433-4535'
-        )
-      end
-
       it 'is valid with valid attributes' do
         expect(job_monitor.valid?).to be_truthy
       end
@@ -80,7 +80,57 @@ module SAFE
         job_monitor.failures = '143d'
         expect(job_monitor.valid?).to be_falsey
       end
-
     end
+
+    describe '#processed' do
+      before do
+        job_monitor.track_success
+        job_monitor.track_success
+        job_monitor.track_failure
+      end
+
+      it 'sum successes and failures' do
+        expect(job_monitor.processed).to eq 3
+      end
+    end
+
+    describe '#track_success' do
+      it 'increment successes' do
+        expect(job_monitor.successes).to eq 0
+        job_monitor.track_success
+        expect(job_monitor.successes).to eq 1
+      end
+
+      it 'increment total' do
+        expect(job_monitor.total).to eq 0
+        job_monitor.track_success
+        expect(job_monitor.total).to eq 1
+      end
+
+      it 'persist to db' do
+        job_monitor.track_success
+        expect(job_monitor.persisted?).to be_truthy
+      end
+    end
+
+    describe '#track_failure' do
+      it 'increment successes' do
+        expect(job_monitor.failures).to eq 0
+        job_monitor.track_failure
+        expect(job_monitor.failures).to eq 1
+      end
+
+      it 'increment total' do
+        expect(job_monitor.total).to eq 0
+        job_monitor.track_failure
+        expect(job_monitor.total).to eq 1
+      end
+
+      it 'persist to db' do
+        job_monitor.track_failure
+        expect(job_monitor.persisted?).to be_truthy
+      end
+    end
+
   end
 end

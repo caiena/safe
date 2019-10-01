@@ -42,11 +42,6 @@ module SAFE
         monitor.workflow_id = nil
         expect(monitor.valid?).to be_falsey
       end
-
-      it 'is invalid without monitorable' do
-        monitor.monitorable = nil
-        expect(monitor.valid?).to be_falsey
-      end
     end
 
   end
