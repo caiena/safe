@@ -2,7 +2,8 @@ require 'securerandom'
 
 module SAFE
   class Workflow
-    attr_accessor :id, :jobs, :stopped, :persisted, :arguments
+    attr_accessor :id, :jobs, :stopped, :persisted, :arguments, :monitor
+    attr_reader :linked_record
 
     def initialize(*args)
       @id = id
@@ -50,7 +51,9 @@ module SAFE
     end
 
     def persist!
-      client.persist_workflow(self)
+      client.persist_workflow(self).tap do |persisted|
+        MonitorClient.create(self, linked_record) if persisted
+      end
     end
 
     def expire! (ttl=nil)
@@ -130,6 +133,10 @@ module SAFE
       end
 
       node.name
+    end
+
+    def link(obj)
+      @linked_record = obj
     end
 
     def reload

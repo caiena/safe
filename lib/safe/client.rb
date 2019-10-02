@@ -194,6 +194,7 @@ module SAFE
       flow.jobs = []
       flow.stopped = hash.fetch(:stopped, false)
       flow.id = hash[:id]
+      flow.monitor = MonitorClient.load_workflow(flow)
 
       flow.jobs = nodes.map do |node|
         SAFE::Job.from_hash(node)

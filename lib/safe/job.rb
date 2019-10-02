@@ -1,6 +1,6 @@
 module SAFE
   class Job
-    attr_accessor :workflow_id, :incoming, :outgoing, :params,
+    attr_accessor :workflow_id, :incoming, :outgoing, :params, :monitor,
       :finished_at, :failed_at, :started_at, :enqueued_at, :payloads, :klass, :queue
     attr_reader :id, :klass, :output_payload, :params
 
@@ -43,6 +43,29 @@ module SAFE
     end
 
     def perform
+    end
+
+    def total_steps
+      #raise NotImplementedError, 'Subclass must implement #total_steps'
+      0
+    end
+
+    def track(record=nil, &block)
+      begin
+        block.call
+        increase_successes
+      rescue Exception => e
+        puts e.message
+        puts e.backtrace.inspect
+      end
+    end
+
+    def increase_successes
+      monitor.track_success
+    end
+
+    def monitor
+      @monitor ||= MonitorClient.load_job(self)
     end
 
     def start!

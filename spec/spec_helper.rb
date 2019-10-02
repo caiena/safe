@@ -96,6 +96,8 @@ RSpec.configure do |config|
     mocks.verify_partial_doubles = true
   end
 
+  config.filter_run_when_matching :focus
+
   config.before(:each) do
     clear_enqueued_jobs
     clear_performed_jobs

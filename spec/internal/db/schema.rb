@@ -5,8 +5,8 @@ ActiveRecord::Schema.define do
   create_table(:safe_workflow_monitors, force: true) do |t|
     t.string   :workflow,    null: false
     t.string   :workflow_id, null: false
-    t.bigint   :monitorable_type
-    t.string   :monitorable_id
+    t.string   :monitorable_type
+    t.bigint   :monitorable_id
 
     t.timestamps
   end
@@ -24,8 +24,8 @@ ActiveRecord::Schema.define do
 
   create_table(:safe_error_occurrences, force: true) do |t|
     t.bigint   :job_monitor_id, foreign_key: true, null: false, index: true
-    t.bigint   :record_type
-    t.string   :record_id
+    t.string   :record_type
+    t.bigint   :record_id
     t.string   :params
     t.text     :message
 

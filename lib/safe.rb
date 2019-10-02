@@ -18,6 +18,7 @@ require "safe/errors"
 require "safe/job"
 require "safe/worker"
 require "safe/workflow"
+require "safe/monitor_client"
 
 require "safe/rails/models/safe/model"
 require "safe/rails/models/safe/workflow_monitor"
