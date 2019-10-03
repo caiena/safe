@@ -100,8 +100,14 @@ module SAFE
         end
       end
 
-      context 'failure' do
-        before { job.track { raise Exception } }
+      context 'failure of recoverable exception' do
+        before do
+          def job.recoverable_exceptions
+            [Exception]
+          end
+
+          job.track { raise Exception }
+        end
 
         it 'increase failure count' do
           expect(monitor.failures).to eq 1
@@ -120,6 +126,10 @@ module SAFE
 
           it 'saves object to error occurrence' do
             expect(occurrence.record).to eq record
+          end
+
+          it 'record last success id' do
+            expect(monitor.last_succcess_id).to eq record.id
           end
 
           it 'save error message' do

@@ -101,10 +101,10 @@ module SAFE
         expect(job_monitor.successes).to eq 1
       end
 
-      it 'increment total' do
-        expect(job_monitor.total).to eq 0
+      it 'increment processed' do
+        expect(job_monitor.processed).to eq 0
         job_monitor.track_success
-        expect(job_monitor.total).to eq 1
+        expect(job_monitor.processed).to eq 1
       end
 
       it 'persist to db' do
@@ -120,10 +120,10 @@ module SAFE
         expect(job_monitor.failures).to eq 1
       end
 
-      it 'increment total' do
-        expect(job_monitor.total).to eq 0
+      it 'increment processed' do
+        expect(job_monitor.processed).to eq 0
         job_monitor.track_failure
-        expect(job_monitor.total).to eq 1
+        expect(job_monitor.processed).to eq 1
       end
 
       it 'persist to db' do

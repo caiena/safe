@@ -51,9 +51,7 @@ module SAFE
     end
 
     def persist!
-      client.persist_workflow(self).tap do |persisted|
-        MonitorClient.create(self, linked_record) if persisted
-      end
+      client.persist_workflow(self).tap { |persisted| set_monitor if persisted }
     end
 
     def expire! (ttl=nil)
@@ -154,16 +152,16 @@ module SAFE
 
     def status
       case
-        when failed?
-          :failed
-        when running?
-          :running
-        when finished?
-          :finished
-        when stopped?
-          :stopped
-        else
-          :running
+      when failed?
+        :failed
+      when running?
+        :running
+      when finished?
+        :finished
+      when stopped?
+        :stopped
+      else
+        :running
       end
     end
 
@@ -220,6 +218,10 @@ module SAFE
 
     def last_job
       jobs.max_by{ |n| n.finished_at || 0 } if finished?
+    end
+
+    def set_monitor
+      self.monitor = MonitorClient.create(self, linked_record)
     end
   end
 end

@@ -106,13 +106,22 @@ module SAFE
         block.call
         increase_successes
         record_last_object(record)
-
-      # This rescue catches all errors, maybe we should catch only
-      # expected errors?!?!?!
-      rescue Exception => e
+      rescue *Array(recoverable_exceptions) => e
         increase_failures
         create_error_occurrence(record, e)
+        record_last_object(record)
       end
+    end
+
+    def recoverable_exceptions
+    end
+
+    def tracked_records(collection, attr: :id)
+      collection.where('id > ?', last_recorded_id).reorder(attr)
+    end
+
+    def last_recorded_id
+      monitor.last_succcess_id || 0
     end
 
     def parents_succeeded?

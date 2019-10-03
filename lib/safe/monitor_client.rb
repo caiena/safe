@@ -6,6 +6,7 @@ module SAFE
       def create(workflow, monitorable)
         monitor = create_workflow(workflow, monitorable)
         create_jobs(workflow.jobs, monitor)
+        monitor
       end
 
       def create_error(error:, job_monitor:, record: nil, params: nil)

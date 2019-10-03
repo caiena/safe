@@ -1,15 +1,17 @@
 class CreateSafeErrorOccurrences < ActiveRecord::Migration<%= migration_version %>
 
-  create_table :safe_error_occurrences do |t|
-    t.bigint   :job_monitor_id, foreign_key: true, null: false, index: true
-    t.string   :record_type
-    t.bigint   :record_id
-    t.text     :params
-    t.text     :message
-    t.datetime :updated_at
-    t.datetime :created_at
-  end
+  def change
+    create_table :safe_error_occurrences do |t|
+      t.bigint   :job_monitor_id, foreign_key: true, null: false, index: true
+      t.string   :record_type
+      t.bigint   :record_id
+      t.text     :params
+      t.text     :message
+      t.datetime :updated_at
+      t.datetime :created_at
+    end
 
-  add_index :safe_error_occurrences, [:record_type, :record_id], name: 'index_safe_errors_on_record_type_and_id'
+    add_index :safe_error_occurrences, [:record_type, :record_id], name: 'index_safe_errors_on_record_type_and_id'
+  end
 
 end

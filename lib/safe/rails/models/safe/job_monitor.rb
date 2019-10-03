@@ -11,6 +11,8 @@ module SAFE
     validates :total, :successes, :failures,
       numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
+    attr_readonly :total
+
     def processed
       successes + failures
     end
@@ -31,7 +33,6 @@ module SAFE
 
     def track(attr)
       increment(attr)
-      increment(:total)
       save!
     end
 
