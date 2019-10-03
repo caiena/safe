@@ -15,12 +15,16 @@ module SAFE
       successes + failures
     end
 
-    def track_success
-      track(:successes)
-    end
-
     def track_failure
       track(:failures)
+    end
+
+    def track_record(obj)
+      update!(last_succcess_id: obj.id)
+    end
+
+    def track_success
+      track(:successes)
     end
 
     private

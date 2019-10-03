@@ -1,5 +1,6 @@
 module SAFE
   class ErrorOccurrence < Model
+    serialize :params
 
     belongs_to :job_monitor
     belongs_to :record, polymorphic: true

@@ -4,7 +4,7 @@ class CreateSafeErrorOccurrences < ActiveRecord::Migration<%= migration_version 
     t.bigint   :job_monitor_id, foreign_key: true, null: false, index: true
     t.string   :record_type
     t.bigint   :record_id
-    t.string   :params
+    t.text     :params
     t.text     :message
     t.datetime :updated_at
     t.datetime :created_at

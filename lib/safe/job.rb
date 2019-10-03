@@ -46,22 +46,7 @@ module SAFE
     end
 
     def total_steps
-      #raise NotImplementedError, 'Subclass must implement #total_steps'
       0
-    end
-
-    def track(record=nil, &block)
-      begin
-        block.call
-        increase_successes
-      rescue Exception => e
-        puts e.message
-        puts e.backtrace.inspect
-      end
-    end
-
-    def increase_successes
-      monitor.track_success
     end
 
     def monitor
@@ -116,6 +101,20 @@ module SAFE
       !running? && !enqueued? && !finished? && !failed? && parents_succeeded?
     end
 
+    def track(record=nil, &block)
+      begin
+        block.call
+        increase_successes
+        record_last_object(record)
+
+      # This rescue catches all errors, maybe we should catch only
+      # expected errors?!?!?!
+      rescue Exception => e
+        increase_failures
+        create_error_occurrence(record, e)
+      end
+    end
+
     def parents_succeeded?
       !incoming.any? do |name|
         !client.find_job(workflow_id, name).succeeded?
@@ -127,14 +126,6 @@ module SAFE
     end
 
     private
-
-    def client
-      @client ||= Client.new
-    end
-
-    def current_timestamp
-      Time.now.to_i
-    end
 
     def assign_variables(opts)
       @id             = opts[:id]
@@ -150,5 +141,36 @@ module SAFE
       @workflow_id    = opts[:workflow_id]
       @queue          = opts[:queue]
     end
+
+    def create_error_occurrence(record, error)
+      MonitorClient.create_error(
+        record:      record,
+        error:       error,
+        params:      params,
+        job_monitor: monitor
+      )
+    end
+
+    def client
+      @client ||= Client.new
+    end
+
+    def current_timestamp
+      Time.now.to_i
+    end
+
+    def record_last_object(object)
+      return unless object.respond_to?(:id)
+      monitor.track_record(object)
+    end
+
+    def increase_failures
+      monitor.track_failure
+    end
+
+    def increase_successes
+      monitor.track_success
+    end
+
   end
 end

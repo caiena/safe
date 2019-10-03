@@ -8,6 +8,14 @@ module SAFE
         create_jobs(workflow.jobs, monitor)
       end
 
+      def create_error(error:, job_monitor:, record: nil, params: nil)
+        job_monitor.error_occurrences.create!(
+          record:  record,
+          params:  params,
+          message: "#{error.class}: #{error.message}"
+        )
+      end
+
       def load_workflow(flow)
         WorkflowMonitor
           .where(workflow: flow.class.to_s, workflow_id: flow.id)
