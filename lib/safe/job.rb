@@ -116,7 +116,7 @@ module SAFE
     def recoverable_exceptions
     end
 
-    def tracked_records(collection, attr: :id)
+    def order_and_track(collection, attr: :id)
       collection.where('id > ?', last_recorded_id).reorder(attr)
     end
 
