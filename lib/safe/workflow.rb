@@ -16,14 +16,62 @@ module SAFE
       setup
     end
 
-    def self.find(id)
-      SAFE::Client.new.find_workflow(id)
-    end
+    class << self
+      # Create a instance of Workflow with given arguments
+      #
+      # @param args [Any]
+      #
+      # @return [SAFE::Workflow]
+      #
+      def create(*args)
+        flow = new(*args)
+        flow.save
+        flow
+      end
 
-    def self.create(*args)
-      flow = new(*args)
-      flow.save
-      flow
+      # Load or create an workflow. If any workflow
+      # of same class exists and is running, returns it.
+      # Otherwise create a new one.
+      #
+      # If workflow has an linked_record it will use it to
+      # scope the existing record, if not will only consider
+      # workflow class and status
+      #
+      # @param args [Any]
+      #
+      # @return [SAFE::Workflow]
+      #
+      def create_unique(*args)
+        workflow = find_running(new(*args))
+        workflow || create(*args)
+      end
+
+      # Load an workflow based on its unique id
+      #
+      # @param id [String]
+      #
+      # @return [SAFE::Workflow]
+      #
+      def find(id)
+        client.find_workflow(id)
+      end
+
+      private
+
+      def client
+        Client.new
+      end
+
+      def find_running(new_flow)
+        client.all_workflows.each do |flow|
+          if new_flow.linked_record
+            return flow if flow.to_hash[:name] == new_flow.class.to_s && flow.running? && new_flow.linked_record == flow.linked_record
+          else
+            return flow if flow.to_hash[:name] == new_flow.class.to_s && flow.running?
+          end
+        end
+        return false
+      end
     end
 
     def continue

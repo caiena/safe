@@ -19,6 +19,50 @@ module SAFE
       end
     end
 
+    describe '.create_unique' do
+      def start_workflow(flow)
+        flow.start!
+        flow.jobs.first.start!
+        flow.save
+      end
+
+      context 'without linked_record' do
+        let(:flow) { TestWorkflow.create_unique }
+
+        before { start_workflow(flow) }
+
+        let(:new_flow) { TestWorkflow.create_unique }
+
+        it 'dont create a new flow if its running' do
+          expect(new_flow.id).to eq flow.id
+        end
+      end
+
+      context 'with linked_record' do
+        let(:record) { MonitorableMock.create! }
+        let(:flow) { TestWorkflow.create_unique(record) }
+
+        before { start_workflow(flow) }
+
+        context 'same linked_record' do
+          let(:new_flow) { TestWorkflow.create_unique(record) }
+
+          it 'dont create a new flow if its running' do
+            expect(new_flow.id).to eq flow.id
+          end
+        end
+
+        context 'different linked_record' do
+          let(:record_b) { MonitorableMock.create! }
+          let(:new_flow) { TestWorkflow.create_unique(record_b) }
+
+          it 'create a new flow if its running' do
+            expect(new_flow.id).not_to eq flow.id
+          end
+        end
+      end
+    end
+
     describe "#initialize" do
       it "passes constructor arguments to the method" do
         klass = Class.new(Workflow) do

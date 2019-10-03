@@ -27,8 +27,10 @@ class MonitorableMock < ActiveRecord::Base; end
 SAFEFILE = Pathname.new(__FILE__).parent.join("Safefile")
 
 class TestWorkflow < SAFE::Workflow
-  def configure(some_id=nil)
-    run Prepare, params: { some_id: some_id }
+  def configure(args=nil)
+    link(args) if args.respond_to?(:id)
+
+    run Prepare, params: { some_id: args }
 
     run NormalizeJob
 
