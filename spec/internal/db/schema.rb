@@ -18,7 +18,7 @@ ActiveRecord::Schema.define do
     t.integer  :total,     null: false, default: 0
     t.integer  :successes, null: false, default: 0
     t.integer  :failures,  null: false, default: 0
-    t.bigint   :last_succcess_id
+    t.bigint   :last_success_id
 
     t.timestamps
   end

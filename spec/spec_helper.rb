@@ -7,6 +7,8 @@ require 'bundler'
 
 Bundler.require :default, :development, :test
 
+Rails.env = 'test'
+
 Combustion.initialize! :active_record do
   config.active_record.sqlite3.represent_boolean_as_integer = true
 end

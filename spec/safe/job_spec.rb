@@ -95,7 +95,7 @@ module SAFE
           before { job.track(record) { 'success' } }
 
           it 'save record id' do
-            expect(monitor.last_succcess_id).to eq record.id
+            expect(monitor.last_success_id).to eq record.id
           end
         end
       end
@@ -129,7 +129,7 @@ module SAFE
           end
 
           it 'record last success id' do
-            expect(monitor.last_succcess_id).to eq record.id
+            expect(monitor.last_success_id).to eq record.id
           end
 
           it 'save error message' do

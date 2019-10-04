@@ -22,7 +22,7 @@ module SAFE
     end
 
     def track_record(obj)
-      update!(last_succcess_id: obj.id)
+      update!(last_success_id: obj.id)
     end
 
     def track_success
