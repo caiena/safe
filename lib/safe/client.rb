@@ -195,10 +195,10 @@ module SAFE
       flow.stopped = hash.fetch(:stopped, false)
       flow.id = hash[:id]
 
-      monitor = MonitorClient.load_workflow(flow)
-
-      flow.monitor = monitor
-      flow.link(monitor.monitorable)
+      if monitor = MonitorClient.load_workflow(flow)
+        flow.monitor = monitor
+        flow.link(monitor.monitorable)
+      end
 
       flow.jobs = nodes.map do |node|
         SAFE::Job.from_hash(node)
