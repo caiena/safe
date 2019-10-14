@@ -5,7 +5,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 version = File.read(File.expand_path("VERSION", __dir__)).strip
 
 Gem::Specification.new do |spec|
-  spec.name          = "safe_workflows"
+  spec.name          = "safe"
   spec.version       = version
   spec.authors       = ["Denis Tierno"]
   spec.email         = ["denis.tierno@caiena.net"]
