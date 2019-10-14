@@ -2,14 +2,16 @@
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
+version = File.read(File.expand_path("VERSION", __dir__)).strip
+
 Gem::Specification.new do |spec|
-  spec.name          = "safe"
-  spec.version       = "2.0.1"
+  spec.name          = "safe_workflows"
+  spec.version       = version
   spec.authors       = ["Denis Tierno"]
   spec.email         = ["denis.tierno@caiena.net"]
   spec.summary       = "Monitored and organized job execution based on Gush"
   spec.description   = "Monitored and organized job execution based on Gush"
-  spec.homepage      = ""
+  spec.homepage      = "https://github.com/caiena/safe"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files -z`.split("\x0")

@@ -1,5 +1,5 @@
 # S.A.F.E
-## Secure Asynchronous Financial Executor
+## Secure Asynchronous Flow Executor
 
 S.A.F.E. é uma gem criada com base na [gem gush](https://github.com/chaps-io/gush) para a execução de trabalhos assíncronos de forma ordenada, utilizando Redis e [ActiveJob](http://guides.rubyonrails.org/v4.2/active_job_basics.html#introduction). Esta gem toma como base a implementação utilizada no gush, sendo assim, quase todas suas _features_ estão disponíveis para uso.
 
