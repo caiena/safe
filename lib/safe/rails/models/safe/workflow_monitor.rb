@@ -13,6 +13,10 @@ module SAFE
       def for_linked_resource(resource)
         where(monitorable: resource).order(created_at: :desc)
       end
+
+      def last_for_resource_and_flow(resource, workflow)
+        for_linked_resource(resource).where(workflow: workflow).limit(1).first
+      end
     end
 
     def workflow_status
