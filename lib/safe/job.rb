@@ -117,7 +117,9 @@ module SAFE
     end
 
     def order_and_track(collection, attr: :id)
-      collection.where('id > ?', last_recorded_id).reorder(attr)
+      collection
+        .where("#{collection.arel_table.name}.id > ?", last_recorded_id)
+        .reorder(attr)
     end
 
     def last_recorded_id
