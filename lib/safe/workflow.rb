@@ -65,7 +65,7 @@ module SAFE
       def find_running(new_flow)
         client.all_workflows.each do |flow|
           if new_flow.linked_record
-            return flow if flow.to_hash[:name] == new_flow.class.to_s && flow.running? && new_flow.linked_record == flow.linked_record
+            return flow if flow.to_hash[:name] == new_flow.class.to_s && !flow.finished? && new_flow.linked_record == flow.linked_record && flow.monitor
           else
             return flow if flow.to_hash[:name] == new_flow.class.to_s && flow.running?
           end

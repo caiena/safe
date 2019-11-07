@@ -13,8 +13,24 @@ module SAFE
 
     attr_readonly :total
 
+    def monitorable
+      @monitorable ||= client.find_job(workflow_monitor.workflow_id, job)
+    end
+
     def processed
       successes + failures
+    end
+
+    def status
+      if monitorable.running?
+        :running
+      elsif monitorable.succeeded?
+        :succeeded
+      elsif monitorable.failed?
+        :failed
+      else
+        :queued
+      end
     end
 
     def track_failure
@@ -30,6 +46,10 @@ module SAFE
     end
 
     private
+
+    def client
+      @client ||= Client.new
+    end
 
     def track(attr)
       increment(attr)
