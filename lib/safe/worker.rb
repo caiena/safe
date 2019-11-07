@@ -6,6 +6,11 @@ module SAFE
     def perform(workflow_id, job_id)
       setup_job(workflow_id, job_id)
 
+      if job.succeeded?
+        enqueue_outgoing_jobs
+        return
+      end
+
       job.payloads = incoming_payloads
 
       error = nil
@@ -75,6 +80,8 @@ module SAFE
           end
         end
       end
+    rescue RedisMutex::LockError
+      Worker.set(wait: 2.seconds).perform_later(workflow_id, job.name)
     end
   end
 end
