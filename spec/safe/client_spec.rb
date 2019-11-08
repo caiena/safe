@@ -98,9 +98,14 @@ describe SAFE::Client do
     it "sets TTL for all Redis keys related to the workflow" do
       workflow = TestWorkflow.create
 
-      client.expire_workflow(workflow, -1)
+      client.expire_workflow(workflow, 10)
+      expect(redis.ttl("safe.workflows.#{workflow.id}")).to eq 10
 
-      # => TODO - I believe fakeredis does not handle TTL the same.   
+      jobs = workflow.jobs.map(&:klass)
+
+      jobs.each do |job|
+        expect(redis.ttl("safe.jobs.#{workflow.id}.#{job}")).to eq 10
+      end
     end
   end
 

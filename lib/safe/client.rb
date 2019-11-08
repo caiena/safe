@@ -155,7 +155,7 @@ module SAFE
     def expire_job(workflow_id, job, ttl=nil)
       ttl = ttl || configuration.ttl
       connection_pool.with do |redis|
-        redis.expire("safe.jobs.#{workflow_id}.#{job.name}", ttl)
+        redis.expire("safe.jobs.#{workflow_id}.#{job.klass}", ttl)
       end
     end
 
