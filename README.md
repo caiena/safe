@@ -15,7 +15,7 @@ gem 'safe', github: 'caiena/safe', branch: 'master'
 
 ### 2. Instalar as migrações
 
-Execute o gerador para instalar as migrações no projeto 
+Execute o gerador para instalar as migrações no projeto
 
 ```
 bundle exec rails g safe:install
@@ -30,16 +30,16 @@ Um _workflow_ possuí 2 métodos principais (definidos dentro do método `config
 # app/workflows/sample_workflow.rb
 class NotificationWorkflow < SAFE::Workflow
   def configure(user_id)
-    
+
     # método opcional, serve para linkar um objeto que responda ao método :id,
     # possibilitando o vínculo entra um workflow e o registro
     link User.find(user_id)
-    
+
     run ComputeUserJob, params: { id: user_id }
     run UpdateUserJob, params: { id: user_id }
-    
+
     run NotifyUserJob, after: [ComputeUserJob, UpdateUserJob], params: { id: user_id }
-    
+
     run NotifyAdminJob, after: NotifyUserJob
   end
 end
@@ -51,7 +51,6 @@ O método `run` aceita dois parâmetros:
 
 - `params:` hash com parâmetros disponíveis para o job.
 
-  
 
 Após definir um workflow é preciso definir seus jobs, ex:
 ```ruby
@@ -61,14 +60,14 @@ class ComputeUserJob < SAFE::Job
     # método com hash de variáveis passadas no workflow
     params #=> {id: 10}
     user = User.find(params[:id])
-    
+
     # o método track aceita um bloco envolvendo uma etapa de
     # computação. Se o bloco não levantar um erro o método track
     # irá incrementar o número de sucessos do monitor do job em questão
     track { user.compute }
     track { user.finish_computation }
   end
-  
+
   # número total de passos a serem executados dentro
   # do método perform. Nesse caso, o total são 2 pois
   # temos dois processamentos (um em cada block `track`)
@@ -89,24 +88,24 @@ class UpdateUserJob < SAFE::Job
     # de que o Job sofra um erro crítico, ao ser retomado,
     # o job irá iniciar a partir do último id registrado com sucesso.
     order_and_track(orders).each do |order|
-      
+
       # agora o método track também aceita um objeto que responda a :id,
       # com isso a execução do bloco com sucesso registrará o id do último
       # registro executado com sucesso
       track(order) { order.compute }
     end
   end
-  
+
   def total_steps
     orders.count
   end
-  
+
   def orders
     @orders ||= User.find(params[:id]).orders
   end
-  
+
   private
-  
+
   # esse método permite que algumas exceções esperadas
   # evitem a falha de execução do job. Se uma dessas
   # exceções for levantada durante o processamento o método
@@ -171,7 +170,15 @@ job.processed
 occurrence = job.error_occurrences.first
 occurrence #=> SAFE::ErrorOccurrence
 ```
+## Expiração
 
+Por padrão as chaves permanecerão indeterminadamente no redis, para evitar um acumulo de armazenamento desnecessário basta configurar o valor em segundos de `ttl`, ex:
+```ruby
+# config/initializers/safe.rb
+SAFE.configure do |config|
+  config.ttl = 3600*24*10
+end
+```
 
 ## Testando
 
