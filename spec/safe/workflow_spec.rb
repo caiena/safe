@@ -103,6 +103,8 @@ module SAFE
         end
 
         context 'active record persistence' do
+          before { WorkflowMonitor.destroy_all }
+
           it 'create a WorkflowMonitor record' do
             expect{ TestWorkflow.create }.to change(WorkflowMonitor, :count).by(1)
           end
