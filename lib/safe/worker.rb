@@ -24,6 +24,8 @@ module SAFE
       else
         mark_as_finished
         enqueue_outgoing_jobs
+      ensure
+        set_flow_expiration
       end
     end
 
@@ -49,6 +51,11 @@ module SAFE
           output: job.output_payload
         }
       end
+    end
+
+    def set_flow_expiration
+      flow = client.find_workflow(workflow_id)
+      flow.expire! if flow.finished?
     end
 
     def mark_as_finished

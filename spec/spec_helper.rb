@@ -121,7 +121,8 @@ RSpec.configure do |config|
 
     SAFE.configure do |config|
       config.redis_url = REDIS_URL
-      config.safefile = SAFEFILE
+      config.safefile  = SAFEFILE
+      config.ttl       = 10
     end
   end
 

@@ -1,7 +1,7 @@
 require 'spec_helper'
 require 'pry'
 
-describe "Workflows" do
+RSpec.describe "Workflows" do
   context "when all jobs finish successfuly" do
     it "marks workflow as completed" do
       flow = TestWorkflow.create
@@ -12,6 +12,33 @@ describe "Workflows" do
       flow = flow.reload
       expect(flow).to be_finished
       expect(flow).to_not be_failed
+    end
+  end
+
+  context "when all jobs finish successfuly" do
+    class ExpireWorkflow < SAFE::Workflow
+      def configure
+        run Prepare
+        run NormalizeJob, after: Prepare
+      end
+    end
+
+    before { SAFE.configure { |c| c.ttl = 5 } }
+
+    it 'set expire! in workflow' do
+      flow = ExpireWorkflow.create
+      flow.start!
+
+      expect(SAFE::Worker).to have_jobs(flow.id, jobs_with_id(['Prepare']))
+      perform_one
+
+      expect(SAFE::Worker).to have_jobs(flow.id, jobs_with_id(['NormalizeJob']))
+      perform_one
+
+      flow = flow.reload
+      expect(flow).to be_finished
+      expect(flow).to_not be_failed
+      expect(redis.ttl("safe.workflows.#{flow.id}")).to eq 5
     end
   end
 
@@ -172,6 +199,8 @@ describe "Workflows" do
 
     # One time when persisting, second time when reloading in the spec
     expect(INTERNAL_CONFIGURE_SPY).to receive(:some_method).exactly(2).times
+
+    allow_any_instance_of(SAFE::Worker).to receive(:set_flow_expiration)
 
     class SimpleJob < SAFE::Job
       def perform
