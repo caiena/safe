@@ -60,6 +60,23 @@ module SAFE
             expect(new_flow.id).not_to eq flow.id
           end
         end
+
+        context 'when previous unique record is deleted' do
+          before { record.destroy! }
+
+          context 'different linked_record' do
+            let(:record_b) { MonitorableMock.create! }
+            let(:new_flow) { TestWorkflow.create_unique(record_b) }
+
+            it 'create a new flow if its running' do
+              expect(new_flow.id).not_to eq flow.id
+            end
+          end
+        end
+
+        context 'when monitor object is deleted' do
+        end
+
       end
     end
 
@@ -176,16 +193,19 @@ module SAFE
     end
 
     describe "#to_json" do
-      it "returns correct hash" do
-        klass = Class.new(Workflow) do
+      let(:klass) do
+        Class.new(Workflow) do
           def configure(*args)
             run FetchFirstJob
             run PersistFirstJob, after: FetchFirstJob
           end
         end
+      end
 
-        result = ::JSON.parse(klass.create("arg1", "arg2").to_json)
-        expected = {
+      let(:result) { ::JSON.parse(klass.create("arg1", "arg2").to_json) }
+
+      let(:expected) do
+        {
           "id" => an_instance_of(String),
           "name" => klass.to_s,
           "klass" => klass.to_s,
@@ -197,7 +217,30 @@ module SAFE
           "stopped" => false,
           "arguments" => ["arg1", "arg2"]
         }
+      end
+
+      it "returns correct hash" do
         expect(result).to match(expected)
+      end
+
+      context 'with linked object' do
+        let!(:monitorable) { MonitorableMock.create }
+
+        let(:result) do
+          flow = klass.create("arg1", "arg2")
+          flow.link(monitorable)
+
+          ::JSON.parse(flow.to_json)
+        end
+
+        before do
+          expected['linked_type'] = monitorable.class.to_s
+          expected['linked_id'] = monitorable.id
+        end
+
+        it "returns correct hash" do
+          expect(result).to match(expected)
+        end
       end
     end
 

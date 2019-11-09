@@ -38,7 +38,7 @@ describe SAFE::Worker do
       end
 
       it 'try to set flow expiration' do
-        expect(subject).to receive(:set_flow_expiration)
+        expect(subject).to receive(:update_workflow)
 
         subject.perform(workflow.id, "Prepare")
       end

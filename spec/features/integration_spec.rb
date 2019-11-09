@@ -200,7 +200,7 @@ RSpec.describe "Workflows" do
     # One time when persisting, second time when reloading in the spec
     expect(INTERNAL_CONFIGURE_SPY).to receive(:some_method).exactly(2).times
 
-    allow_any_instance_of(SAFE::Worker).to receive(:set_flow_expiration)
+    allow_any_instance_of(SAFE::Worker).to receive(:update_workflow)
 
     class SimpleJob < SAFE::Job
       def perform
