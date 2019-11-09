@@ -98,19 +98,44 @@ describe SAFE::Client do
     it "sets TTL for all Redis keys related to the workflow" do
       workflow = TestWorkflow.create
 
-      client.expire_workflow(workflow, -1)
+      client.expire_workflow(workflow, 10)
+      expect(redis.ttl("safe.workflows.#{workflow.id}")).to eq 10
 
-      # => TODO - I believe fakeredis does not handle TTL the same.   
+      jobs = workflow.jobs.map(&:klass)
+
+      jobs.each do |job|
+        expect(redis.ttl("safe.jobs.#{workflow.id}.#{job}")).to eq 10
+      end
     end
   end
 
   describe "#persist_job" do
     it "persists JSON dump of the job in Redis" do
-
       job = BobJob.new(name: 'bob')
 
       client.persist_job('deadbeef', job)
       expect(redis.keys("safe.jobs.deadbeef.*").length).to eq(1)
+    end
+  end
+
+  describe "#find_not_finished_workflow_by" do
+    let!(:workflow) { TestWorkflow.create }
+    let(:result)    { client.find_not_finished_workflow_by({klass: 'TestWorkflow'}) }
+
+    context 'when workflow is running' do
+      it "returns the workflow" do
+        expect(result.id).to eq(workflow.id)
+      end
+    end
+
+    context 'when worflow is finished' do
+      before do
+        perform_enqueued_jobs { workflow.start! }
+      end
+
+      it 'returns false' do
+        expect(result).to be_falsey
+      end
     end
   end
 

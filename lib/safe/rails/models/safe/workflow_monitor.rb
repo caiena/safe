@@ -23,6 +23,11 @@ module SAFE
       workflow_klass.find(workflow_id).status
     end
 
+    def init(flow_id)
+      self.workflow_id = flow_id
+      save
+    end
+
     private
 
     def workflow_klass

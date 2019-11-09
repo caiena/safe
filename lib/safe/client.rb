@@ -80,6 +80,29 @@ module SAFE
       end
     end
 
+    def find_not_finished_workflow_by(params)
+      matching = nil
+      connection_pool.with do |redis|
+        redis.scan_each(match: "safe.workflows.*") do |key|
+          hash = SAFE::JSON.decode(redis.get(key), symbolize_keys: true)
+          matching =  hash if hash[:status] != 'finished' && params.all? { |k, v| hash[k] == v }
+        end
+      end
+
+      return false unless matching
+
+      if matching.has_key?(:linked_type)
+        begin
+          matching[:linked_type].constantize.find(matching[:linked_id])
+          find_workflow(matching[:id])
+        rescue ActiveRecord::RecordNotFound => e
+          false
+        end
+      else
+        find_workflow(matching[:id])
+      end
+    end
+
     def find_workflow(id)
       connection_pool.with do |redis|
         data = redis.get("safe.workflows.#{id}")
@@ -155,7 +178,7 @@ module SAFE
     def expire_job(workflow_id, job, ttl=nil)
       ttl = ttl || configuration.ttl
       connection_pool.with do |redis|
-        redis.expire("safe.jobs.#{workflow_id}.#{job.name}", ttl)
+        redis.expire("safe.jobs.#{workflow_id}.#{job.klass}", ttl)
       end
     end
 
@@ -194,6 +217,8 @@ module SAFE
       flow.jobs = []
       flow.stopped = hash.fetch(:stopped, false)
       flow.id = hash[:id]
+      flow.linked_type = hash[:linked_type]
+      flow.linked_id = hash[:linked_id]
 
       if monitor = MonitorClient.load_workflow(flow)
         flow.monitor = monitor

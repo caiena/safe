@@ -24,9 +24,8 @@ describe SAFE::Worker do
         end
 
         workflow = FailingWorkflow.create
-        expect do
-          subject.perform(workflow.id, "FailingJob")
-        end.to raise_error(NameError)
+
+        expect { subject.perform(workflow.id, "FailingJob") }.to raise_error(NameError)
         expect(client.find_job(workflow.id, "FailingJob")).to be_failed
       end
     end
@@ -34,6 +33,12 @@ describe SAFE::Worker do
     context "when job completes successfully" do
       it "should mark it as succedeed" do
         expect(subject).to receive(:mark_as_finished)
+
+        subject.perform(workflow.id, "Prepare")
+      end
+
+      it 'try to set flow expiration' do
+        expect(subject).to receive(:update_workflow)
 
         subject.perform(workflow.id, "Prepare")
       end

@@ -3,7 +3,7 @@ module SAFE
 
     belongs_to :workflow_monitor
 
-    has_many :error_occurrences, dependent: :destroy
+    has_many :error_occurrences, dependent: :delete_all
 
     validates :failures, :job, :job_id, :successes, :total, :workflow_monitor,
       presence: true
@@ -12,6 +12,16 @@ module SAFE
       numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
     attr_readonly :total
+
+    def init(_job)
+      self.job_id    = _job.id
+      self.failures  = 0
+      self.successes = 0
+      self.total     = _job.total_steps
+
+      error_occurrences.clear
+      save
+    end
 
     def monitorable
       @monitorable ||= client.find_job(workflow_monitor.workflow_id, job)
