@@ -170,6 +170,12 @@ module SAFE
       Time.now.to_i
     end
 
+    def update_total_steps
+      return unless monitor
+      monitor.total = total_steps
+      monitor.save
+    end
+
     def record_last_object(object)
       return unless object.respond_to?(:id)
       monitor.track_record(object)
