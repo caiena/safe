@@ -39,7 +39,7 @@ module SAFE
 
     def setup_job(workflow_id, job_id)
       @workflow_id = workflow_id
-      @job ||= client.find_job(workflow_id, job_id)
+      @job = client.find_job(workflow_id, job_id)
     end
 
     def incoming_payloads
@@ -80,7 +80,7 @@ module SAFE
 
     def enqueue_outgoing_jobs
       job.outgoing.each do |job_name|
-        RedisMutex.with_lock("safe_enqueue_outgoing_jobs_#{workflow_id}-#{job_name}", sleep: 0.3, block: 2) do
+        RedisMutex.with_lock("safe_enqueue_outgoing_jobs_#{workflow_id}-#{job_name}", sleep: 0.5, block: 3) do
           out = client.find_job(workflow_id, job_name)
 
           if out.ready_to_start?
