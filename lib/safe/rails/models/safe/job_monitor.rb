@@ -11,8 +11,6 @@ module SAFE
     validates :total, :successes, :failures,
       numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
-    attr_readonly :total
-
     def init(_job)
       self.job_id    = _job.id
       self.failures  = 0
@@ -24,7 +22,7 @@ module SAFE
     end
 
     def monitorable
-      @monitorable ||= client.find_job(workflow_monitor.workflow_id, job)
+      client.find_job(workflow_monitor.workflow_id, job)
     end
 
     def processed
