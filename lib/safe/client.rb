@@ -185,9 +185,11 @@ module SAFE
     def enqueue_job(workflow_id, job)
       job.enqueue!
       persist_job(workflow_id, job)
-      queue = job.queue || configuration.namespace
 
-      SAFE::Worker.set(queue: queue).perform_later(*[workflow_id, job.name])
+      queue = job.queue || configuration.namespace
+      delay = Integer(configuration.job_delay).seconds
+
+      SAFE::Worker.set(queue: queue, wait: delay).perform_later(*[workflow_id, job.name])
     end
 
     private
