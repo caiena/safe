@@ -1,6 +1,6 @@
 module SAFE
   class Configuration
-    attr_accessor :concurrency, :namespace, :redis_url, :ttl
+    attr_accessor :concurrency, :namespace, :redis_url, :ttl, :job_delay
 
     def self.from_json(json)
       new(SAFE::JSON.decode(json, symbolize_keys: true))
@@ -12,6 +12,7 @@ module SAFE
       self.redis_url   = hash.fetch(:redis_url, 'redis://localhost:6379')
       self.safefile    = hash.fetch(:safefile, 'Safefile')
       self.ttl         = hash.fetch(:ttl, -1)
+      self.job_delay   = hash.fetch(:job_delay, 0)
     end
 
     def safefile=(path)
@@ -27,7 +28,8 @@ module SAFE
         concurrency: concurrency,
         namespace:   namespace,
         redis_url:   redis_url,
-        ttl:         ttl
+        ttl:         ttl,
+        job_delay:   job_delay
       }
     end
 
