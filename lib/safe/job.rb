@@ -123,7 +123,7 @@ module SAFE
     end
 
     def last_recorded_id
-      monitor.last_success_id || 0
+      monitor&.last_success_id || 0
     end
 
     def parents_succeeded?

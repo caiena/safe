@@ -12,10 +12,11 @@ module SAFE
       numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
     def init(_job)
-      self.job_id    = _job.id
-      self.failures  = 0
-      self.successes = 0
-      self.total     = _job.total_steps
+      self.job_id          = _job.id
+      self.failures        = 0
+      self.successes       = 0
+      self.last_success_id = 0
+      self.total           = _job.total_steps
 
       error_occurrences.clear
       save
