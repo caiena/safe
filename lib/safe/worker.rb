@@ -6,6 +6,11 @@ module SAFE
     def perform(workflow_id, job_id)
       setup_job(workflow_id, job_id)
 
+      if job.succeeded?
+        enqueue_outgoing_jobs
+        return
+      end
+
       job.payloads = incoming_payloads
 
       error = nil
@@ -19,6 +24,8 @@ module SAFE
       else
         mark_as_finished
         enqueue_outgoing_jobs
+      ensure
+        update_workflow
       end
     end
 
@@ -32,7 +39,7 @@ module SAFE
 
     def setup_job(workflow_id, job_id)
       @workflow_id = workflow_id
-      @job ||= client.find_job(workflow_id, job_id)
+      @job = client.find_job(workflow_id, job_id)
     end
 
     def incoming_payloads
@@ -44,6 +51,12 @@ module SAFE
           output: job.output_payload
         }
       end
+    end
+
+    def update_workflow
+      flow = client.find_workflow(workflow_id)
+      client.persist_workflow(flow)
+      flow.expire! if flow.finished?
     end
 
     def mark_as_finished
@@ -67,7 +80,7 @@ module SAFE
 
     def enqueue_outgoing_jobs
       job.outgoing.each do |job_name|
-        RedisMutex.with_lock("safe_enqueue_outgoing_jobs_#{workflow_id}-#{job_name}", sleep: 0.3, block: 2) do
+        RedisMutex.with_lock("safe_enqueue_outgoing_jobs_#{workflow_id}-#{job_name}", sleep: 0.5, block: 3) do
           out = client.find_job(workflow_id, job_name)
 
           if out.ready_to_start?
@@ -75,6 +88,8 @@ module SAFE
           end
         end
       end
+    rescue RedisMutex::LockError
+      Worker.set(wait: 2.seconds).perform_later(workflow_id, job.name)
     end
   end
 end

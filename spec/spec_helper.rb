@@ -92,6 +92,19 @@ RSpec::Matchers.define :have_jobs do |flow, jobs|
   end
 end
 
+RSpec::Matchers.define :have_no_jobs do |flow, jobs|
+  match do |actual|
+    expected = jobs.map do |job|
+      hash_including(args: include(flow, job))
+    end
+    expect(ActiveJob::Base.queue_adapter.enqueued_jobs).not_to match_array(expected)
+  end
+
+  failure_message do |actual|
+    "expected queue to have no #{jobs}, but instead has: #{ActiveJob::Base.queue_adapter.enqueued_jobs.map{ |j| j[:args][1]}}"
+  end
+end
+
 RSpec.configure do |config|
   config.include ActiveJob::TestHelper
   config.include SAFEHelpers
@@ -108,7 +121,8 @@ RSpec.configure do |config|
 
     SAFE.configure do |config|
       config.redis_url = REDIS_URL
-      config.safefile = SAFEFILE
+      config.safefile  = SAFEFILE
+      config.ttl       = 10
     end
   end
 

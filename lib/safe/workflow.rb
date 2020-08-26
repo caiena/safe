@@ -2,7 +2,7 @@ require 'securerandom'
 
 module SAFE
   class Workflow
-    attr_accessor :id, :jobs, :stopped, :persisted, :arguments, :monitor
+    attr_accessor :id, :jobs, :stopped, :persisted, :arguments, :monitor, :linked_type, :linked_id
     attr_reader :linked_record
 
     def initialize(*args)
@@ -63,14 +63,14 @@ module SAFE
       end
 
       def find_running(new_flow)
-        client.all_workflows.each do |flow|
-          if new_flow.linked_record
-            return flow if flow.to_hash[:name] == new_flow.class.to_s && flow.running? && new_flow.linked_record == flow.linked_record
-          else
-            return flow if flow.to_hash[:name] == new_flow.class.to_s && flow.running?
-          end
-        end
-        return false
+        params = { klass: new_flow.class.to_s }
+
+        params.merge!({
+          linked_type: new_flow.linked_record.class.to_s,
+          linked_id:   new_flow.linked_record.id.to_i
+        }) if new_flow.linked_record
+
+        client.find_not_finished_workflow_by(params)
       end
     end
 
@@ -234,6 +234,14 @@ module SAFE
         stopped: stopped,
         started_at: started_at,
         finished_at: finished_at
+      }.merge!(linked_obj_attrs)
+    end
+
+    def linked_obj_attrs
+      return {} unless linked_record && linked_record.respond_to?(:id)
+      {
+        linked_type: linked_record.class.to_s,
+        linked_id:   linked_record.id
       }
     end
 

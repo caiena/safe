@@ -15,10 +15,12 @@ describe SAFE::Configuration do
       SAFE.configure do |config|
         config.redis_url = "redis://localhost"
         config.concurrency = 25
+        config.job_delay   = 3
       end
 
       expect(SAFE.configuration.redis_url).to eq("redis://localhost")
       expect(SAFE.configuration.concurrency).to eq(25)
+      expect(SAFE.configuration.job_delay).to eq(3)
     end
   end
 end

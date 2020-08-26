@@ -117,11 +117,13 @@ module SAFE
     end
 
     def order_and_track(collection, attr: :id)
-      collection.where('id > ?', last_recorded_id).reorder(attr)
+      collection
+        .where("#{collection.arel_table.name}.id > ?", last_recorded_id)
+        .reorder(attr)
     end
 
     def last_recorded_id
-      monitor.last_success_id || 0
+      monitor&.last_success_id || 0
     end
 
     def parents_succeeded?
@@ -166,6 +168,12 @@ module SAFE
 
     def current_timestamp
       Time.now.to_i
+    end
+
+    def update_total_steps
+      return unless monitor
+      monitor.total = total_steps
+      monitor.save
     end
 
     def record_last_object(object)

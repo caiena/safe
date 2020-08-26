@@ -24,9 +24,8 @@ describe SAFE::Worker do
         end
 
         workflow = FailingWorkflow.create
-        expect do
-          subject.perform(workflow.id, "FailingJob")
-        end.to raise_error(NameError)
+
+        expect { subject.perform(workflow.id, "FailingJob") }.to raise_error(NameError)
         expect(client.find_job(workflow.id, "FailingJob")).to be_failed
       end
     end
@@ -36,6 +35,24 @@ describe SAFE::Worker do
         expect(subject).to receive(:mark_as_finished)
 
         subject.perform(workflow.id, "Prepare")
+      end
+
+      it 'try to set flow expiration' do
+        expect(subject).to receive(:update_workflow)
+
+        subject.perform(workflow.id, "Prepare")
+      end
+    end
+
+    context 'when job failed to enqueue outgoing jobs' do
+      it 'enqeues another job to handling enqueue_outgoing_jobs' do
+        allow(RedisMutex).to receive(:with_lock).and_raise(RedisMutex::LockError)
+        subject.perform(workflow.id, 'Prepare')
+        expect(SAFE::Worker).to have_no_jobs(workflow.id, jobs_with_id(["FetchFirstJob", "FetchSecondJob"]))
+
+        allow(RedisMutex).to receive(:with_lock).and_call_original
+        perform_one
+        expect(SAFE::Worker).to have_jobs(workflow.id, jobs_with_id(["FetchFirstJob", "FetchSecondJob"]))
       end
     end
 
