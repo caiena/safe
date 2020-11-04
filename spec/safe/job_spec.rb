@@ -10,6 +10,7 @@ module SAFE
         expect(job.output_payload).to eq("something")
       end
     end
+
     describe "#fail!" do
       it "sets finished and failed to true and records time" do
         job = described_class.new(name: "a-job")

@@ -1,18 +1,21 @@
 module SAFE
   class Configuration
-    attr_accessor :concurrency, :namespace, :redis_url, :ttl, :job_delay
+    attr_accessor :concurrency, :namespace, :redis_url, :ttl, :job_delay,
+      :silent_fail, :monitor_callback
 
     def self.from_json(json)
       new(SAFE::JSON.decode(json, symbolize_keys: true))
     end
 
     def initialize(hash = {})
-      self.concurrency = hash.fetch(:concurrency, 5)
-      self.namespace   = hash.fetch(:namespace, 'safe')
-      self.redis_url   = hash.fetch(:redis_url, 'redis://localhost:6379')
-      self.safefile    = hash.fetch(:safefile, 'Safefile')
-      self.ttl         = hash.fetch(:ttl, -1)
-      self.job_delay   = hash.fetch(:job_delay, 0)
+      self.concurrency      = hash.fetch(:concurrency, 5)
+      self.namespace        = hash.fetch(:namespace, 'safe')
+      self.redis_url        = hash.fetch(:redis_url, 'redis://localhost:6379')
+      self.safefile         = hash.fetch(:safefile, 'Safefile')
+      self.ttl              = hash.fetch(:ttl, -1)
+      self.job_delay        = hash.fetch(:job_delay, 0)
+      self.silent_fail      = hash.fetch(:silenet_fail, false)
+      self.monitor_callback = hash.fetch(:monitor_callback, false)
     end
 
     def safefile=(path)
