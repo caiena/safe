@@ -30,11 +30,11 @@ module SAFE
         mark_as_finished
         enqueue_outgoing_jobs
       ensure
-        update_workflow
-
         if monitor_callback = client.configuration.monitor_callback
           monitor_callback.call(job.monitor)
         end
+
+        update_workflow
       end
     end
 
