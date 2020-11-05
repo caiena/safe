@@ -94,6 +94,50 @@ module SAFE
       end
     end
 
+    describe '#status' do
+      subject { job_monitor.status }
+
+      context 'without monitorable' do
+        it { is_expected.to eq :unknown }
+      end
+
+      context 'monitorable is running' do
+        before do
+          monitorable = spy 'job', running?: true
+          allow(job_monitor).to receive(:monitorable).and_return(monitorable)
+        end
+
+        it { is_expected.to eq :running }
+      end
+
+      context 'monitorable is succeeded' do
+        before do
+          monitorable = spy 'job', running?: false, succeeded?: true
+          allow(job_monitor).to receive(:monitorable).and_return(monitorable)
+        end
+
+        it { is_expected.to eq :succeeded }
+      end
+
+      context 'monitorable is failed' do
+        before do
+          monitorable = spy 'job', running?: false, succeeded?: false, failed?: true
+          allow(job_monitor).to receive(:monitorable).and_return(monitorable)
+        end
+
+        it { is_expected.to eq :failed }
+      end
+
+      context 'monitorable is queued' do
+        before do
+          monitorable = spy 'job', running?: false, succeeded?: false, failed?: false
+          allow(job_monitor).to receive(:monitorable).and_return(monitorable)
+        end
+
+        it { is_expected.to eq :queued }
+      end
+    end
+
     describe '#track_success' do
       it 'increment successes' do
         expect(job_monitor.successes).to eq 0

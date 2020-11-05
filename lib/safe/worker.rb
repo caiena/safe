@@ -20,6 +20,11 @@ module SAFE
         job.perform
       rescue => error
         mark_as_failed
+
+        if error_monitor = client.configuration.error_monitor
+          error_monitor.call(error)
+        end
+
         raise error unless client.configuration.silent_fail
       else
         mark_as_finished

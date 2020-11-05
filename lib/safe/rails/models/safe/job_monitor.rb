@@ -31,6 +31,8 @@ module SAFE
     end
 
     def status
+      return :unknown unless monitorable
+
       if monitorable.running?
         :running
       elsif monitorable.succeeded?
