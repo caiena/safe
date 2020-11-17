@@ -3,6 +3,7 @@ require 'redis-mutex'
 
 module SAFE
   class Worker < ::ActiveJob::Base
+
     def perform(workflow_id, job_id)
       setup_job(workflow_id, job_id)
 

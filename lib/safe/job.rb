@@ -50,7 +50,7 @@ module SAFE
     end
 
     def monitor
-      MonitorClient.load_job(self)
+      @monitor ||= MonitorClient.load_job(self)
     end
 
     def start!
