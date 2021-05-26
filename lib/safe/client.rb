@@ -85,7 +85,7 @@ module SAFE
       redis.scan_each(match: "safe.workflows.*").map do |key|
         id = key.sub("safe.workflows.", "")
         find_workflow(id)
-      end
+      end.compact
     end
 
     def find_not_finished_workflow_by(params)
@@ -109,7 +109,11 @@ module SAFE
           array.concat redis.hvals(key).map { |json| SAFE::JSON.decode(json, symbolize_keys: true) }
         end
 
-        workflow_from_hash(hash, nodes)
+        if hash[:linked_type] && !linked_record_exists(hash)
+          nil
+        else
+          workflow_from_hash(hash, nodes)
+        end
       else
         raise WorkflowNotFound.new("Workflow with given id doesn't exist")
       end
@@ -176,7 +180,7 @@ module SAFE
     private
 
     def linked_record_exists(params)
-      params[:linked_type].constantize.find(params[:linked_id])
+      params[:linked_type].constantize.exists?(params[:linked_id])
     rescue ActiveRecord::RecordNotFound => e
       false
     end
@@ -197,6 +201,16 @@ module SAFE
       job
     end
 
+    def load_linked_record(type, id)
+      return false unless type && id
+
+      begin
+        type.constantize.find(id)
+      rescue ActiveRecord::RecordNotFound
+        false
+      end
+    end
+
     def workflow_from_hash(hash, nodes = [])
       flow = hash[:klass].constantize.new(*hash[:arguments])
       flow.jobs = []
@@ -205,9 +219,13 @@ module SAFE
       flow.linked_type = hash[:linked_type]
       flow.linked_id = hash[:linked_id]
 
-      if monitor = MonitorClient.load_workflow(flow)
-        flow.monitor = monitor
-        flow.link(monitor.monitorable)
+      monitorable = load_linked_record(hash[:linked_type], hash[:linked_id])
+
+      if monitorable
+        if monitor = MonitorClient.load_workflow(flow, monitorable)
+          flow.monitor = monitor
+          flow.link(monitor.monitorable)
+        end
       end
 
       flow.jobs = nodes.map do |node|

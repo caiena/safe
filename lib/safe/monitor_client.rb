@@ -15,9 +15,9 @@ module SAFE
         )
       end
 
-      def load_workflow(flow)
+      def load_workflow(flow, monitorable)
         WorkflowMonitor
-          .where(workflow: flow.class.to_s, workflow_id: flow.id)
+          .where(workflow: flow.class.to_s, monitorable: monitorable, workflow_id: flow.id)
           .first
       end
 
