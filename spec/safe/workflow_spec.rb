@@ -5,7 +5,8 @@ module SAFE
     subject { TestWorkflow.create }
 
     describe '.find' do
-      let(:flow) { TestWorkflow.create }
+      let(:linked) { MonitorableMock.create! }
+      let(:flow) { TestWorkflow.create(linked) }
 
       let(:reloaded) { TestWorkflow.find(flow.id) }
 

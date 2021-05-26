@@ -1,8 +1,21 @@
-require 'connection_pool'
+require 'redis'
+require 'concurrent-ruby'
 
 module SAFE
   class Client
     attr_reader :configuration
+
+    @@redis_connection = Concurrent::ThreadLocalVar.new(nil)
+
+    def self.redis_connection(config)
+      cached = (@@redis_connection.value ||= { url: config.redis_url, connection: nil})
+      return cached[:connection] if !cached[:connection].nil? && config.redis_url == cached[:url]
+
+      Redis.new(url: config.redis_url).tap do |instance|
+        RedisClassy.redis = instance
+        @@redis_connection.value = { url: config.redis_url, connection: instance }
+      end
+    end
 
     def initialize(config = SAFE.configuration)
       @configuration = config
@@ -47,9 +60,7 @@ module SAFE
 
       loop do
         job_id = SecureRandom.uuid
-        available = connection_pool.with do |redis|
-          !redis.hexists("safe.jobs.#{workflow_id}.#{job_klass}", job_id)
-        end
+        available = !redis.hexists("safe.jobs.#{workflow_id}.#{job_klass}", job_id)
 
         break if available
       end
@@ -61,9 +72,7 @@ module SAFE
       id = nil
       loop do
         id = SecureRandom.uuid
-        available = connection_pool.with do |redis|
-          !redis.exists("safe.workflow.#{id}")
-        end
+        available = !redis.exists("safe.workflow.#{id}")
 
         break if available
       end
@@ -72,60 +81,45 @@ module SAFE
     end
 
     def all_workflows
-      connection_pool.with do |redis|
-        redis.scan_each(match: "safe.workflows.*").map do |key|
-          id = key.sub("safe.workflows.", "")
-          find_workflow(id)
-        end
-      end
+      redis.scan_each(match: "safe.workflows.*").map do |key|
+        id = key.sub("safe.workflows.", "")
+        find_workflow(id)
+      end.compact
     end
 
     def find_not_finished_workflow_by(params)
-      matching = nil
-      connection_pool.with do |redis|
-        redis.scan_each(match: "safe.workflows.*") do |key|
-          hash = SAFE::JSON.decode(redis.get(key), symbolize_keys: true)
-          matching =  hash if hash[:status] != 'finished' && params.all? { |k, v| hash[k] == v }
+      all_workflows.detect do |workflow|
+        if params[:linked_type]
+          linked_record_exists(params) && !workflow.finished? && params.all? { |k, v| workflow.to_hash[k] == v }
+        else
+          !workflow.finished? && params.all? { |k, v| workflow.to_hash[k] == v }
         end
-      end
-
-      return false unless matching
-
-      if matching.has_key?(:linked_type)
-        begin
-          matching[:linked_type].constantize.find(matching[:linked_id])
-          find_workflow(matching[:id])
-        rescue ActiveRecord::RecordNotFound => e
-          false
-        end
-      else
-        find_workflow(matching[:id])
       end
     end
 
     def find_workflow(id)
-      connection_pool.with do |redis|
-        data = redis.get("safe.workflows.#{id}")
+      data = redis.get("safe.workflows.#{id}")
 
-        unless data.nil?
-          hash = SAFE::JSON.decode(data, symbolize_keys: true)
-          keys = redis.scan_each(match: "safe.jobs.#{id}.*")
+      unless data.nil?
+        hash = SAFE::JSON.decode(data, symbolize_keys: true)
+        keys = redis.scan_each(match: "safe.jobs.#{id}.*")
 
-          nodes = keys.each_with_object([]) do |key, array|
-            array.concat redis.hvals(key).map { |json| SAFE::JSON.decode(json, symbolize_keys: true) }
-          end
-
-          workflow_from_hash(hash, nodes)
-        else
-          raise WorkflowNotFound.new("Workflow with given id doesn't exist")
+        nodes = keys.each_with_object([]) do |key, array|
+          array.concat redis.hvals(key).map { |json| SAFE::JSON.decode(json, symbolize_keys: true) }
         end
+
+        if hash[:linked_type] && !linked_record_exists(hash)
+          nil
+        else
+          workflow_from_hash(hash, nodes)
+        end
+      else
+        raise WorkflowNotFound.new("Workflow with given id doesn't exist")
       end
     end
 
     def persist_workflow(workflow)
-      connection_pool.with do |redis|
-        redis.set("safe.workflows.#{workflow.id}", workflow.to_json)
-      end
+      redis.set("safe.workflows.#{workflow.id}", workflow.to_json)
 
       workflow.jobs.each {|job| persist_job(workflow.id, job) }
       workflow.mark_as_persisted
@@ -134,9 +128,7 @@ module SAFE
     end
 
     def persist_job(workflow_id, job)
-      connection_pool.with do |redis|
-        redis.hset("safe.jobs.#{workflow_id}.#{job.klass}", job.id, job.to_json)
-      end
+      redis.hset("safe.jobs.#{workflow_id}.#{job.klass}", job.id, job.to_json)
     end
 
     def find_job(workflow_id, job_name)
@@ -155,31 +147,23 @@ module SAFE
     end
 
     def destroy_workflow(workflow)
-      connection_pool.with do |redis|
-        redis.del("safe.workflows.#{workflow.id}")
-      end
+      redis.del("safe.workflows.#{workflow.id}")
       workflow.jobs.each {|job| destroy_job(workflow.id, job) }
     end
 
     def destroy_job(workflow_id, job)
-      connection_pool.with do |redis|
-        redis.del("safe.jobs.#{workflow_id}.#{job.klass}")
-      end
+      redis.del("safe.jobs.#{workflow_id}.#{job.klass}")
     end
 
     def expire_workflow(workflow, ttl=nil)
       ttl = ttl || configuration.ttl
-      connection_pool.with do |redis|
-        redis.expire("safe.workflows.#{workflow.id}", ttl)
-      end
+      redis.expire("safe.workflows.#{workflow.id}", ttl)
       workflow.jobs.each {|job| expire_job(workflow.id, job, ttl) }
     end
 
     def expire_job(workflow_id, job, ttl=nil)
       ttl = ttl || configuration.ttl
-      connection_pool.with do |redis|
-        redis.expire("safe.jobs.#{workflow_id}.#{job.klass}", ttl)
-      end
+      redis.expire("safe.jobs.#{workflow_id}.#{job.klass}", ttl)
     end
 
     def enqueue_job(workflow_id, job)
@@ -194,24 +178,36 @@ module SAFE
 
     private
 
+    def linked_record_exists(params)
+      params[:linked_type].constantize.exists?(params[:linked_id])
+    rescue ActiveRecord::RecordNotFound => e
+      false
+    end
+
     def find_job_by_klass_and_id(workflow_id, job_name)
       job_klass, job_id = job_name.split('|')
 
-      connection_pool.with do |redis|
-        redis.hget("safe.jobs.#{workflow_id}.#{job_klass}", job_id)
-      end
+      redis.hget("safe.jobs.#{workflow_id}.#{job_klass}", job_id)
     end
 
     def find_job_by_klass(workflow_id, job_name)
-      new_cursor, result = connection_pool.with do |redis|
-        redis.hscan("safe.jobs.#{workflow_id}.#{job_name}", 0, count: 1)
-      end
+      new_cursor, result = redis.hscan("safe.jobs.#{workflow_id}.#{job_name}", 0, count: 1)
 
       return nil if result.empty?
 
       job_id, job = *result[0]
 
       job
+    end
+
+    def load_linked_record(type, id)
+      return false unless type && id
+
+      begin
+        type.constantize.find(id)
+      rescue ActiveRecord::RecordNotFound
+        false
+      end
     end
 
     def workflow_from_hash(hash, nodes = [])
@@ -222,9 +218,13 @@ module SAFE
       flow.linked_type = hash[:linked_type]
       flow.linked_id = hash[:linked_id]
 
-      if monitor = MonitorClient.load_workflow(flow)
-        flow.monitor = monitor
-        flow.link(monitor.monitorable)
+      monitorable = load_linked_record(hash[:linked_type], hash[:linked_id])
+
+      if monitorable
+        if monitor = MonitorClient.load_workflow(flow, monitorable)
+          flow.monitor = monitor
+          flow.link(monitor.monitorable)
+        end
       end
 
       flow.jobs = nodes.map do |node|
@@ -234,14 +234,8 @@ module SAFE
       flow
     end
 
-    def build_redis
-      Redis.new(url: configuration.redis_url).tap do |instance|
-        RedisClassy.redis = instance
-      end
-    end
-
-    def connection_pool
-      @connection_pool ||= ConnectionPool.new(size: configuration.concurrency, timeout: 1) { build_redis }
+    def redis
+      self.class.redis_connection(configuration)
     end
   end
 end

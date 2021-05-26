@@ -36,12 +36,6 @@ describe SAFE::Worker do
 
         subject.perform(workflow.id, "Prepare")
       end
-
-      it 'try to set flow expiration' do
-        expect(subject).to receive(:update_workflow)
-
-        subject.perform(workflow.id, "Prepare")
-      end
     end
 
     context 'when job failed to enqueue outgoing jobs' do
