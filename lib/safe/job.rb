@@ -105,12 +105,14 @@ module SAFE
       begin
         block.call
         increase_successes
-        record_last_object(record)
       rescue *Array(recoverable_exceptions) => e
         increase_failures
         create_error_occurrence(record, e)
-        record_last_object(record)
       end
+    end
+
+    def finish_execution!
+      monitor.save!
     end
 
     def recoverable_exceptions
@@ -174,11 +176,6 @@ module SAFE
       return unless monitor
       monitor.total = total_steps
       monitor.save
-    end
-
-    def record_last_object(object)
-      return unless object.respond_to?(:id)
-      monitor.track_record(object)
     end
 
     def increase_failures

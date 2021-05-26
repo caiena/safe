@@ -89,16 +89,6 @@ module SAFE
         it 'increase processed count' do
           expect(monitor.processed).to eq 1
         end
-
-        context 'with trackable object' do
-          let(:record) { MonitorableMock.create! }
-
-          before { job.track(record) { 'success' } }
-
-          it 'save record id' do
-            expect(monitor.last_success_id).to eq record.id
-          end
-        end
       end
 
       context 'failure of recoverable exception' do
@@ -127,10 +117,6 @@ module SAFE
 
           it 'saves object to error occurrence' do
             expect(occurrence.record).to eq record
-          end
-
-          it 'record last success id' do
-            expect(monitor.last_success_id).to eq record.id
           end
 
           it 'save error message' do

@@ -45,7 +45,7 @@ module SAFE
     end
 
     def track_failure
-      track(:failures)
+      self.failures += 1
     end
 
     def track_record(obj)
@@ -53,18 +53,13 @@ module SAFE
     end
 
     def track_success
-      track(:successes)
+      self.successes += 1
     end
 
     private
 
     def client
       @client ||= Client.new
-    end
-
-    def track(attr)
-      increment(attr)
-      save!
     end
 
   end

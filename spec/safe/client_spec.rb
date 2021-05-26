@@ -119,24 +119,80 @@ describe SAFE::Client do
   end
 
   describe "#find_not_finished_workflow_by" do
-    let!(:workflow) { TestWorkflow.create }
-    let(:result)    { client.find_not_finished_workflow_by({klass: 'TestWorkflow'}) }
+    context 'without linked record' do
+      let!(:workflow) { TestWorkflow.create() }
+      let(:result)    { client.find_not_finished_workflow_by({klass: 'TestWorkflow'}) }
 
-    context 'when workflow is running' do
-      it "returns the workflow" do
-        expect(result.id).to eq(workflow.id)
+      context 'when workflow is running' do
+        it "returns the workflow" do
+          expect(result.id).to eq(workflow.id)
+        end
+      end
+
+      context 'workflow is finished' do
+        before do
+          perform_enqueued_jobs { workflow.start! }
+        end
+        
+        it 'returns false' do
+          expect(result).to be_falsey
+        end
       end
     end
 
-    context 'when worflow is finished' do
-      before do
-        perform_enqueued_jobs { workflow.start! }
+    context 'with linked record' do
+      let!(:linked)   { MonitorableMock.create! }
+      let!(:workflow) { TestWorkflow.create(linked) }
+
+      let(:result) do
+        client.find_not_finished_workflow_by(
+          {klass: 'TestWorkflow', linked_type: 'MonitorableMock', linked_id: linked.id }
+        )
       end
 
+      context 'workflow is running' do
+        it "returns the workflow" do
+          expect(result.id).to eq(workflow.id)
+        end
+      end
+
+      context 'when worflow is finished' do
+        before do
+          perform_enqueued_jobs { workflow.start! }
+        end
+
+        it 'returns false' do
+          expect(result).to be_falsey
+        end
+      end
+    end
+
+    context 'linked record doesent exists' do
+      let!(:linked)   { MonitorableMock.create! }
+      let!(:workflow) { TestWorkflow.create(linked) }
+
+      let(:result) do
+        client.find_not_finished_workflow_by(
+          {klass: 'TestWorkflow', linked_type: 'MonitorableMock', linked_id: linked.id }
+        )
+      end
+
+      before do
+        linked.destroy!
+      end
+      
       it 'returns false' do
         expect(result).to be_falsey
       end
     end
+
+
+#     context 'when workflow is running' do
+# 
+#       it "returns the workflow" do
+#         expect(result.id).to eq(workflow.id)
+#       end
+#     end
   end
 
   describe "#all_workflows" do

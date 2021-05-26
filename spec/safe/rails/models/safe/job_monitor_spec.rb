@@ -150,11 +150,6 @@ module SAFE
         job_monitor.track_success
         expect(job_monitor.processed).to eq 1
       end
-
-      it 'persist to db' do
-        job_monitor.track_success
-        expect(job_monitor.persisted?).to be_truthy
-      end
     end
 
     describe '#track_failure' do
@@ -168,11 +163,6 @@ module SAFE
         expect(job_monitor.processed).to eq 0
         job_monitor.track_failure
         expect(job_monitor.processed).to eq 1
-      end
-
-      it 'persist to db' do
-        job_monitor.track_failure
-        expect(job_monitor.persisted?).to be_truthy
       end
     end
 

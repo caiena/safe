@@ -19,6 +19,7 @@ module SAFE
       mark_as_started
       begin
         job.perform
+        job.finish_execution!
       rescue => error
         mark_as_failed
 
@@ -34,8 +35,6 @@ module SAFE
         if monitor_callback = client.configuration.monitor_callback
           monitor_callback.call(job.monitor)
         end
-
-        update_workflow
       end
     end
 

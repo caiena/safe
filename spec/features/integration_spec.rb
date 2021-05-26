@@ -25,7 +25,7 @@ RSpec.describe "Workflows" do
 
     before { SAFE.configure { |c| c.ttl = 5 } }
 
-    it 'set expire! in workflow' do
+    xit 'set expire! in workflow' do
       flow = ExpireWorkflow.create
       flow.start!
 
