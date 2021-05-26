@@ -185,14 +185,6 @@ describe SAFE::Client do
         expect(result).to be_falsey
       end
     end
-
-
-#     context 'when workflow is running' do
-# 
-#       it "returns the workflow" do
-#         expect(result.id).to eq(workflow.id)
-#       end
-#     end
   end
 
   describe "#all_workflows" do
