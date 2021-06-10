@@ -10,7 +10,6 @@ module SAFE
       def create_error(error:, job_monitor:, record: nil, params: nil)
         job_monitor.error_occurrences.create!(
           record: record,
-          params: params,
           message: "#{error.class}: #{error.message}"
         )
       end

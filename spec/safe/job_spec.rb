@@ -122,10 +122,6 @@ module SAFE
           it 'save error message' do
             expect(occurrence.message).to eq "Exception: Some Message"
           end
-
-          it 'save params' do
-            expect(occurrence.params).to eq({ some_id: 10 })
-          end
         end
       end
     end
