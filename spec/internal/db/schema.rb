@@ -18,6 +18,7 @@ ActiveRecord::Schema.define do
     t.integer  :total,     null: false, default: 0
     t.integer  :successes, null: false, default: 0
     t.integer  :failures,  null: false, default: 0
+    t.integer  :error_occurrences_count
     t.bigint   :last_success_id
 
     t.timestamps
@@ -27,7 +28,6 @@ ActiveRecord::Schema.define do
     t.bigint   :job_monitor_id, foreign_key: true, null: false, index: true
     t.string   :record_type
     t.bigint   :record_id
-    t.text     :params
     t.text     :message
 
     t.timestamps

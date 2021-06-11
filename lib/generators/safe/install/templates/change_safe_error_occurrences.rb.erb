@@ -1,0 +1,8 @@
+class CreateSafeWorkflowMonitors < ActiveRecord::Migration<%= migration_version %>
+
+  def change
+    remove_column :safe_error_occurrences, :params
+    add_column :safe_job_monitors, :error_occurrences_count, :integer
+  end
+
+end
