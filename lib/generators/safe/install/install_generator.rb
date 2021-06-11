@@ -25,6 +25,7 @@ module SAFE
       add_migration('create_safe_workflow_monitors')
       add_migration('create_safe_job_monitors')
       add_migration('create_safe_error_occurrences')
+      add_migration('change_safe_error_occurrences')
     end
 
     #def create_initializer_file
