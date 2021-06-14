@@ -24,6 +24,7 @@ module SAFE
         JobMonitor
           .where(job: job.klass.to_s, job_id: job.id)
           .first
+          .tap { |job_monitor| job_monitor.init(job) }
       end
 
       private

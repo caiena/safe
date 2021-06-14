@@ -6,7 +6,7 @@ module SAFE
     has_many :error_occurrences, dependent: :delete_all
 
     validates :failures, :job, :job_id, :successes, :total, :workflow_monitor,
-      presence: true
+      presence: tru
 
     validates :total, :successes, :failures,
       numericality: { only_integer: true, greater_than_or_equal_to: 0 }
@@ -30,7 +30,10 @@ module SAFE
       successes + failures
     end
 
+    # The two guard clauses ensure correct state after
+    # redis key is no longer available
     def status
+      return :succeeded if  !total.zero? && total == successes
       return :unknown unless monitorable
 
       if monitorable.running?
