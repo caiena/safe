@@ -90,8 +90,8 @@ module SAFE
     def find_not_finished_workflow_by(params)
       record_exists = params[:linked_type] ? linked_record_exists(params) : true
 
-      wf_id = redis.scan_each(match: "safe.workflows.*").detect do |key|
-        record_exists && !workflow_finished?(key) && same_workflow?(key, params)
+      wf_id = redis.scan_each(match: "safe.workflows.*", count: 10_000).detect do |key|
+        record_exists && same_workflow?(key, params) && !workflow_finished?(key)
       end
 
       find_workflow(wf_id.sub("safe.workflows.", "")) if wf_id.present?
@@ -99,7 +99,7 @@ module SAFE
 
     def workflow_finished?(workflow_id)
       id = workflow_id.sub("safe.workflows.", "")
-      redis.scan_each(match: "safe.jobs.#{id}.*").all? do |job|
+      redis.scan_each(match: "safe.jobs.#{id}.*", count: 10_000).all? do |job|
         redis.hvals(job).all? do |json|
           SAFE::JSON.decode(json, symbolize_keys: true)[:finished_at].present?
         end
