@@ -169,7 +169,7 @@ module SAFE
       deps_after = [*opts[:after]]
 
       deps_after.each do |dep|
-        @dependencies << {from: dep.to_s, to: node.name.to_s }
+        @dependencies << {from: dep.to_s, to: "#{node.name.to_s}|#{node.id}" }
       end
 
       deps_before = [*opts[:before]]
