@@ -32,7 +32,8 @@ module SAFE
       def create_workflow(workflow, monitorable)
         monitor = WorkflowMonitor.where(
           workflow: workflow.class.to_s,
-          monitorable: monitorable
+          monitorable_id: monitorable.try(:id),
+          monitorable_type: monitorable.try(:class).try(:to_s)
         ).first_or_initialize
 
         monitor.init(workflow.id)
