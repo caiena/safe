@@ -12,7 +12,7 @@ ActiveRecord::Schema.define do
   end
 
   create_table(:safe_job_monitors, force: true) do |t|
-    t.bigint   :workflow_monitor_id, foreign_key: true, null: false, index: true
+    t.bigint   :workflow_monitor_id, null: false, index: true
     t.string   :job,       null: false
     t.string   :job_id,    null: false
     t.integer  :total,     null: false, default: 0
@@ -25,7 +25,7 @@ ActiveRecord::Schema.define do
   end
 
   create_table(:safe_error_occurrences, force: true) do |t|
-    t.bigint   :job_monitor_id, foreign_key: true, null: false, index: true
+    t.bigint   :job_monitor_id, null: false, index: true
     t.string   :record_type
     t.bigint   :record_id
     t.text     :message

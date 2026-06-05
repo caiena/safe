@@ -4,13 +4,20 @@ require 'json'
 require 'pry'
 require 'pry-byebug'
 require 'bundler'
+require 'minitest'
+require 'minitest/assertions'
 
 Bundler.require :default, :development, :test
 
 Rails.env = 'test'
 
 Combustion.initialize! :active_record do
-  config.active_record.sqlite3.represent_boolean_as_integer = true
+  # Only meaningful on Rails 5.2; removed in 6.0+ where integer-backed
+  # booleans are always the default.
+  if config.active_record.respond_to?(:sqlite3) &&
+     config.active_record.sqlite3.respond_to?(:represent_boolean_as_integer=)
+    config.active_record.sqlite3.represent_boolean_as_integer = true
+  end
 end
 
 ActiveJob::Base.queue_adapter = :test
@@ -106,6 +113,13 @@ RSpec::Matchers.define :have_no_jobs do |flow, jobs|
 end
 
 RSpec.configure do |config|
+  # ActiveJob::TestHelper (Rails 6+) delegates to Minitest assertions
+  # (e.g. #assert) via ActiveSupport::Testing::Assertions. Mix them in so
+  # perform_enqueued_jobs and friends work under RSpec. Minitest::Assertions
+  # requires the including object to expose an #assertions counter.
+  config.include Minitest::Assertions
+  config.before(:each) { self.class.send(:attr_accessor, :assertions) unless respond_to?(:assertions); self.assertions = 0 }
+
   config.include ActiveJob::TestHelper
   config.include SAFEHelpers
 

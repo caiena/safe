@@ -72,7 +72,7 @@ module SAFE
       id = nil
       loop do
         id = SecureRandom.uuid
-        available = !redis.exists("safe.workflow.#{id}")
+        available = !key_exists?("safe.workflow.#{id}")
 
         break if available
       end
@@ -252,6 +252,17 @@ module SAFE
 
     def redis
       self.class.redis_connection(configuration)
+    end
+
+    # redis-rb >= 4.2 returns an Integer from #exists (count of keys) and
+    # exposes the boolean #exists?. Older clients returned a boolean from
+    # #exists. Normalize to a boolean so the id-generation loops terminate.
+    def key_exists?(key)
+      if redis.respond_to?(:exists?)
+        redis.exists?(key)
+      else
+        redis.exists(key)
+      end
     end
   end
 end
