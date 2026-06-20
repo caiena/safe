@@ -1,5 +1,4 @@
 require 'active_job'
-require 'redis-mutex'
 
 module SAFE
   class Worker < ::ActiveJob::Base
@@ -89,7 +88,7 @@ module SAFE
 
     def enqueue_outgoing_jobs
       job.outgoing.each do |job_name|
-        RedisMutex.with_lock("safe_enqueue_outgoing_jobs_#{workflow_id}-#{job_name}", sleep: 0.5, block: 3) do
+        client.with_lock("safe_enqueue_outgoing_jobs_#{workflow_id}-#{job_name}", sleep: 0.5, block: 3) do
           out = client.find_job(workflow_id, job_name)
 
           if out.ready_to_start?
@@ -97,7 +96,7 @@ module SAFE
           end
         end
       end
-    rescue RedisMutex::LockError
+    rescue SAFE::LockError
       Worker.set(wait: 2.seconds).perform_later(workflow_id, job.name)
     end
   end

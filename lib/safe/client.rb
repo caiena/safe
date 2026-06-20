@@ -12,7 +12,6 @@ module SAFE
       return cached[:connection] if !cached[:connection].nil? && config.redis_url == cached[:url]
 
       Redis.new(url: config.redis_url).tap do |instance|
-        RedisClassy.redis = instance
         @@redis_connection.value = { url: config.redis_url, connection: instance }
       end
     end
@@ -190,6 +189,33 @@ module SAFE
       delay = Integer(configuration.job_delay).seconds
 
       SAFE::Worker.set(queue: queue, wait: delay).perform_later(*[workflow_id, job.name])
+    end
+
+    # Lock distribuído via Redis (SET NX EX) com retentativa — substitui o
+    # redis-mutex (preso em redis < 5). Tenta adquirir a cada `sleep` segundos
+    # por até `block` segundos; em caso de timeout levanta SAFE::LockError.
+    # A liberação só ocorre se ainda formos o dono do lock (token), via script
+    # Lua atômico, evitando liberar lock de outro processo após expiração.
+    def with_lock(name, sleep: 0.5, block: 3, expire: 10)
+      lock_key = "safe.lock.#{name}"
+      token    = SecureRandom.uuid
+      deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + block
+
+      until redis.set(lock_key, token, nx: true, ex: expire)
+        if Process.clock_gettime(Process::CLOCK_MONOTONIC) >= deadline
+          raise LockError, "could not acquire lock #{lock_key}"
+        end
+        Kernel.sleep(sleep)
+      end
+
+      begin
+        yield
+      ensure
+        redis.eval(
+          "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end",
+          keys: [lock_key], argv: [token]
+        )
+      end
     end
 
     private

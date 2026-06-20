@@ -19,13 +19,14 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "activejob", ">= 5.2", "< 8.1"
-  spec.add_dependency "activerecord", ">= 5.2", "< 8.1"
+  spec.add_dependency "activejob", ">= 5.2", "< 8.2"
+  spec.add_dependency "activerecord", ">= 5.2", "< 8.2"
   spec.add_dependency "concurrent-ruby", ">= 1.0", "< 2.0"
   spec.add_dependency "multi_json", "~> 1.11"
-  spec.add_dependency "redis", ">= 3.2", "< 5"
-  spec.add_dependency "redis-mutex", "~> 4.0.1"
-  spec.add_dependency "hiredis", "~> 0.6"
+  # Lock distribuído agora usa SET NX EX nativo (SAFE::Client#with_lock),
+  # então redis-mutex/redis-classy (presos em redis < 5) e o hiredis 0.x
+  # (driver legado) foram removidos — liberando redis-rb 5.x.
+  spec.add_dependency "redis", ">= 4.0", "< 6"
   spec.add_dependency "ruby-graphviz", "~> 1.2"
   spec.add_dependency "terminal-table", "~> 1.4"
   spec.add_dependency "colorize", "~> 0.7"
