@@ -166,5 +166,29 @@ module SAFE
       end
     end
 
+    describe '#init' do
+      let(:job) { spy('job', id: '3433-4535', total_steps: 3) }
+
+      context 'on a new (unpersisted) monitor' do
+        it 'persists without raising the counter_cache regression' do
+          # Regressão do Rails 8.1: #clear numa has_many com counter_cache
+          # chamava #increment! no dono ainda novo → "cannot update a new record".
+          expect(job_monitor).to be_new_record
+          expect { job_monitor.init(job) }.not_to raise_error
+          expect(job_monitor).to be_persisted
+        end
+      end
+
+      context 'on a persisted monitor' do
+        it 'clears previous error occurrences' do
+          job_monitor.init(job)
+          job_monitor.error_occurrences.create!(message: 'boom')
+
+          expect { job_monitor.init(job) }
+            .to change { job_monitor.error_occurrences.count }.from(1).to(0)
+        end
+      end
+    end
+
   end
 end

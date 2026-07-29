@@ -17,7 +17,11 @@ module SAFE
       self.last_success_id = 0
       self.total           = _job.total_steps
 
-      error_occurrences.clear
+      # Só limpamos as ocorrências de erro quando o registro já existe. Num
+      # registro novo não há o que limpar, e disparar #clear numa associação
+      # com counter_cache faz o Rails 8.1 chamar #increment! no dono ainda não
+      # persistido, levantando "cannot update a new record".
+      error_occurrences.clear if persisted?
       save
     end
 
