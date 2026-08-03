@@ -20,11 +20,20 @@ module SAFE
           .first
       end
 
+      # O monitor do job pode NÃO existir: quando um novo workflow é criado
+      # para o mesmo recurso, `create_jobs` apaga os JobMonitor da rodada
+      # anterior (`monitor.jobs.delete_all`). Os workers da rodada antiga que
+      # ainda estavam na fila passam então a procurar um registro já removido.
+      #
+      # Nesse caso devolvemos nil em vez de estourar NoMethodError: a rodada
+      # antiga foi superada e não tem mais o que acompanhar. Antes, o
+      # `.first.tap` levantava "undefined method 'init' for nil" dentro do
+      # worker, derrubando o job e deixando o workflow travado.
       def load_job(job)
         JobMonitor
           .where(job: job.klass.to_s, job_id: job.id)
           .first
-          .tap { |job_monitor| job_monitor.init(job) }
+          &.tap { |job_monitor| job_monitor.init(job) }
       end
 
       private

@@ -31,7 +31,11 @@ module SAFE
         mark_as_finished
         enqueue_outgoing_jobs
       ensure
-        if monitor_callback = client.configuration.monitor_callback
+        # `job.monitor` é nil quando o acompanhamento desta rodada já foi
+        # substituído por uma rodada mais nova (ver MonitorClient#load_job).
+        # Sem essa guarda o callback receberia nil e estouraria DENTRO do
+        # ensure, mascarando o resultado real do job.
+        if (monitor_callback = client.configuration.monitor_callback) && job.monitor
           monitor_callback.call(job.monitor)
         end
       end

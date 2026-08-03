@@ -111,8 +111,11 @@ module SAFE
       end
     end
 
+    # O monitor pode ter sido removido por uma rodada mais nova do mesmo
+    # workflow (ver MonitorClient#load_job). Sem monitor não há acompanhamento
+    # a gravar, mas o job em si deve concluir normalmente.
     def finish_execution!
-      monitor.save!
+      monitor&.save!
     end
 
     def recoverable_exceptions
@@ -156,6 +159,8 @@ module SAFE
     end
 
     def create_error_occurrence(record, error)
+      return if monitor.nil?
+
       MonitorClient.create_error(
         record:      record,
         error:       error,
@@ -179,11 +184,11 @@ module SAFE
     end
 
     def increase_failures
-      monitor.track_failure
+      monitor&.track_failure
     end
 
     def increase_successes
-      monitor.track_success
+      monitor&.track_success
     end
 
   end
