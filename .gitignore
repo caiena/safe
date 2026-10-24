@@ -21,3 +21,6 @@ tmp
 test.rb
 /Gushfile
 dump.rdb
+
+# Guias locais do Claude Code (não versionados)
+.claude/
